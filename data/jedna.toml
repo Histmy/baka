@@ -1,0 +1,33 @@
+[table]
+source_file = "data/BSc_First-year-students_RU.xlsx"
+#source_file = "data/simpler.xlsx"
+sheet = "data"
+key_column = "A"
+header.1 = 3
+header.2 = 4
+
+[filter]
+#row_filter = ["(RU) Denmark"]
+#row_filter = ["(RU) Austria", "(RU) Estonia", "(RU) Denmark"]
+row_filter = "All"
+# header.1 = [
+# 	"2013/14",
+# 	"2014/15",
+# 	# "2015/16",
+# 	# "2016/17",
+# 	# "2018/19",
+# 	# "2019/20",
+# 	# "2020/21",
+# 	# "2021/22",
+# 	# "2022/23",
+# ]
+#header.1="All"
+header.1=["2019/20"]
+header.2 = ["female"]
+#header.2 = ["female", "total"]
+#header.2 = ["female %"]
+#header.2="All"
+
+[graph]
+title = "Percentage of female students in Informatics Bachelor’s programmes (first-year) at RU – 5-year trend"
+type = "bar"

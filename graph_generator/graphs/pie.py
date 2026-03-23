@@ -1,0 +1,17 @@
+import matplotlib.pyplot as plt
+from graph_generator.dto.toml import Graph
+from graph_generator.dto.ToGraph import ToGraph
+
+
+def make_pie_chart(data: ToGraph, config: Graph) -> None:
+    plt.figure(figsize=(config.width, config.height))
+
+    if len(data.labels) != 1:
+        raise ValueError("Pie chart requires exactly one dimension of labels.")
+
+    plt.pie(data.data, labels=data.labels[0], autopct="%1.1f%%", startangle=90)
+    plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
+
+    plt.show()
+    # plt.savefig("bar_chart_seaborn.png", dpi=300, bbox_inches="tight")
+    plt.close()
