@@ -1,10 +1,9 @@
-from docx import Document
-import docx.document
-from docx.shared import Inches
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 import re
 
+import docx.document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches
 from docx.text.paragraph import Paragraph
 
 
@@ -19,12 +18,12 @@ def add_custom_element(caption: Paragraph, name: str, key: str, value: str):
 
 def replace_placeholder_with_figure(doc: docx.document.Document, before: str, field_name: str, caption_text: str):
     for p in doc.paragraphs:
-        match = re.match(r"\{\{ (.+?) \}\}", p.text)
+        match = re.match(r"^\{\{ (.+?) \}\}$", p.text)
         if not match:
             continue
 
         p.text = ""  # Clear the placeholder text
-        img_path = match.group(1)  # Extract the image path from the placeholder
+        img_path = f"{match.group(1)}.png"  # Extract the image path from the placeholder
 
         width = 16 / 2.54  # Convert cm to inches, full width in default document
         p.add_run().add_picture(img_path, width=Inches(width))
@@ -51,3 +50,15 @@ def replace_placeholder_with_figure(doc: docx.document.Document, before: str, fi
 
         # Add the actual description
         caption_p.add_run(": " + caption_text)
+
+
+def example():
+    document = docx.Document("base.docx")
+
+    replace_placeholder_with_figure(document, "Figure", "Figure", "This is a sample figure.")
+
+    document.save("edited.docx")
+
+
+if __name__ == "__main__":
+    example()

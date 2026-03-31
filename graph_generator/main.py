@@ -1,41 +1,60 @@
+import numpy as np
+
+from graph_generator.dto.ToGraph import ToGraph
+from graph_generator.dto.toml import Filter, Graph
 from graph_generator.graphs.bar import make_bar_chart
+from graph_generator.graphs.box import make_box_chart
+from graph_generator.graphs.histogram import make_histogram_chart
 from graph_generator.graphs.line import make_line_chart
 from graph_generator.graphs.pie import make_pie_chart
 from graph_generator.graphs.spider import make_spider_chart
-from graph_generator.graphs.box import make_box_chart
-from graph_generator.graphs.histogram import make_histogram_chart
 from graph_generator.loader import load_data
-from graph_generator.dto.toml import Graph
-from graph_generator.parser import load_config
-from graph_generator.post_process import collapse, simple_transpose
-from graph_generator.dto.ToGraph import ToGraph
-import numpy as np
+from graph_generator.parser import ParsedTable, load_simple_config, load_split_config
+from graph_generator.post_process import collapse
 
 
-def main() -> None:
-    tables, filters, post_processing, graph_config = load_config("data/jedna.toml")
+def generate(tables: dict[str, ParsedTable], filters: dict[str, Filter], post_processing: dict, graph_config: Graph) -> None:
+    all = []
+
+    if len(tables) == 0:
+        raise ValueError("No tables specified in the configuration.")
 
     for table_name in tables:
         vystup = load_data(tables[table_name], filters[table_name])
 
         processed = collapse(vystup)
         # processed = simple_transpose(processed)
+        all.append(processed)
 
-        match graph_config.type:
-            case "bar":
-                make_bar_chart(processed, graph_config)
-            case "line":
-                make_line_chart(processed, graph_config)
-            case "pie":
-                make_pie_chart(processed, graph_config)
-            case "spider":
-                make_spider_chart(processed, graph_config)
-            case "box":
-                make_box_chart(processed, graph_config)
-            case "histogram":
-                make_histogram_chart(processed, graph_config)
-            case _:
-                raise ValueError(f"Unsupported graph type: {graph_config.type}")
+    processed = all[0]
+
+    match graph_config.type.lower():
+        case "bar":
+            make_bar_chart(processed)
+        case "line":
+            make_line_chart(processed)
+        case "pie":
+            make_pie_chart(processed)
+        case "spider":
+            make_spider_chart(processed, graph_config)
+        case "box":
+            make_box_chart(processed)
+        case "histogram":
+            make_histogram_chart(processed)
+        case _:
+            raise ValueError(f"Unsupported graph type: {graph_config.type}")
+
+
+def make_simple(config_file: str) -> None:
+    generate(*load_simple_config(config_file))
+
+
+def make_split(tables_file: str, graph_file: str) -> None:
+    generate(*load_split_config(tables_file, graph_file))
+
+
+# When started from command line
+def main() -> None: ...
 
 
 def test() -> None:

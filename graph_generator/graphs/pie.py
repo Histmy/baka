@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
-from graph_generator.dto.toml import Graph
+
 from graph_generator.dto.ToGraph import ToGraph
 
 
-def make_pie_chart(data: ToGraph, config: Graph) -> None:
-    plt.figure(figsize=(config.width, config.height))
-
+def make_pie_chart(data: ToGraph) -> None:
     if len(data.labels) != 1:
         raise ValueError("Pie chart requires exactly one dimension of labels.")
 

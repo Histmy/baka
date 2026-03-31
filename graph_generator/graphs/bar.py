@@ -1,14 +1,11 @@
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
-from graph_generator.dto.toml import Graph
+import seaborn as sns
+
 from graph_generator.dto.ToGraph import ToGraph
 from graph_generator.graphs.coverts import transform_three_axes, transform_two_axes
 
 
-def make_bar_chart(data: ToGraph, config: Graph) -> None:
-    plt.figure(figsize=(config.width, config.height))
-
+def make_bar_chart(data: ToGraph) -> None:
     match len(data.labels):
         case 1:
             ax = make_one_dimensional_chart(data)
@@ -21,8 +18,8 @@ def make_bar_chart(data: ToGraph, config: Graph) -> None:
     ax.set_ylabel("Y-axis")
     ax.set_title("Bar Chart")
 
-    plt.show()
-    # plt.savefig("bar_chart_seaborn.png", dpi=300, bbox_inches="tight")
+    # plt.show()
+    plt.savefig("output.png", format="png", dpi=300)
     plt.close()
 
 

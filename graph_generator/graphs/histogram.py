@@ -1,13 +1,10 @@
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
-from graph_generator.dto.toml import Graph
+import seaborn as sns
+
 from graph_generator.dto.ToGraph import ToGraph
 
 
-def make_histogram_chart(data: ToGraph, config: Graph) -> None:
-    plt.figure(figsize=(config.width, config.height))
-
+def make_histogram_chart(data: ToGraph) -> None:
     if len(data.labels) != 1:
         raise ValueError("Histogram chart requires exactly one dimension of labels.")
 

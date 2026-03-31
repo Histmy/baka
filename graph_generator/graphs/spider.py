@@ -1,9 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
 from typing import cast
+
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.projections.polar import PolarAxes
-from graph_generator.dto.toml import Graph
+
 from graph_generator.dto.ToGraph import ToGraph
+from graph_generator.dto.toml import Graph
 
 
 def make_spider_chart(data: ToGraph, config: Graph) -> None:

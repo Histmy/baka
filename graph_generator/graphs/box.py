@@ -1,13 +1,11 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from graph_generator.dto.toml import Graph
+
 from graph_generator.dto.ToGraph import ToGraph
 
 
-def make_box_chart(data: ToGraph, config: Graph) -> None:
-    plt.figure(figsize=(config.width, config.height))
-
+def make_box_chart(data: ToGraph) -> None:
     match len(data.labels):
         case 1:
             ax = make_one_dimensional_chart(data)

@@ -1,9 +1,13 @@
 from dataclasses import dataclass
-from graph_generator.dto.ToGraph import ToGraph
-from graph_generator.dto.toml import Filter, Table
+from typing import Callable
+
+import numpy as np
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
-import numpy as np
+
+from graph_generator.dto.ToGraph import ToGraph
+from graph_generator.dto.toml import Filter
+from graph_generator.parser import ParsedTable
 
 
 @dataclass
@@ -15,13 +19,15 @@ class Bounds:
 @dataclass
 class ColumnLabels:
     x_bounds: Bounds
-    y: list[int]
+    y: dict[str, int]
+    sorted_keys: list[str]
 
 
 @dataclass
 class RowLabels:
-    bounds: Bounds
-    x: int
+    y_bounds: Bounds
+    x: dict[str, int]
+    sorted_keys: list[str]
 
 
 @dataclass
@@ -54,39 +60,45 @@ def get_index_in_row(sheet: Worksheet, row: int, first_col: int, last_col: int, 
     return None
 
 
-def excel_col_to_num(col):
-    n = 0
-    for c in col.upper():
-        n = n * 26 + (ord(c) - ord("A") + 1)
-    return n
+def craft_table_info(sheet: Worksheet, table: ParsedTable) -> TableInfo:
+    # order labels
+    ordered_column_labels = sorted(table.column_header.keys(), key=lambda item: table.column_header[item])
+    ordered_row_labels = sorted(table.row_header.keys(), key=lambda item: table.row_header[item])
+
+    # find top row of data
+    last_column_header = table.column_header[ordered_column_labels[-1]]
+    top = last_column_header + 1
+
+    # find left column of data
+    last_row_header = table.row_header[ordered_row_labels[-1]]
+    left = last_row_header + 1
+
+    # check for last row
+    last_row = top
+    while sheet.cell(row=last_row + 1, column=left).value is not None:
+        last_row += 1
+
+    # check for last column
+    last_column = left
+    while sheet.cell(row=top, column=last_column + 1).value is not None:
+        last_column += 1
+
+    return TableInfo(
+        column_labels=ColumnLabels(Bounds(left, last_column), {key: col for key, col in table.column_header.items()}, ordered_column_labels),
+        row_labels=RowLabels(Bounds(top, last_row), {key: row for key, row in table.row_header.items()}, ordered_row_labels),
+    )
 
 
-def craft_table_info(sheet: Worksheet, table: Table) -> TableInfo:
-    key_column_number = excel_col_to_num(table.key_column)
-
-    column_labels_x_bounds = Bounds(key_column_number + 1, key_column_number + 1)
-
-    first_data_row = list(table.header.values())[-1] + 1
-
-    while sheet.cell(row=first_data_row, column=column_labels_x_bounds.end + 1).value is not None:
-        column_labels_x_bounds.end += 1
-
-    column_labels_y = [i for i in table.header.values()]
-
-    row_label = RowLabels(Bounds(first_data_row, first_data_row), key_column_number)
-
-    while sheet.cell(row=row_label.bounds.end + 1, column=key_column_number).value is not None:
-        row_label.bounds.end += 1
-
-    return TableInfo(ColumnLabels(column_labels_x_bounds, column_labels_y), row_label)
-
-
-def load_all_row_labels(sheet: Worksheet, table_info: TableInfo) -> list[str]:
+def load_all_row_labels(sheet: Worksheet, table_info: TableInfo, column: str) -> list[str]:
     row_labels = []
-    for row in range(table_info.row_labels.bounds.start, table_info.row_labels.bounds.end + 1):
-        cell_value = sheet.cell(row=row, column=table_info.row_labels.x).value
+    for row in range(table_info.row_labels.y_bounds.start, table_info.row_labels.y_bounds.end + 1):
+        cell_value = sheet.cell(row=row, column=table_info.row_labels.x[column]).value
         if cell_value is not None:
             row_labels.append(str(cell_value))
+
+    pattern_length = find_pattern_length(row_labels)
+    if pattern_length is not None:
+        return row_labels[:pattern_length]
 
     return row_labels
 
@@ -107,7 +119,7 @@ def find_pattern_length(lst: list[str]) -> int | None:
     return None
 
 
-def load_all_column_labels(sheet: Worksheet, table_info: TableInfo, row: int) -> list[str]:
+def load_all_column_labels(sheet: Worksheet, table_info: TableInfo, row: str) -> list[str]:
     column_labels = []
     for col in range(table_info.column_labels.x_bounds.start, table_info.column_labels.x_bounds.end + 1):
         cell_value = sheet.cell(row=table_info.column_labels.y[row], column=col).value
@@ -121,7 +133,23 @@ def load_all_column_labels(sheet: Worksheet, table_info: TableInfo, row: int) ->
     return column_labels
 
 
-def load_data(table: Table, filter: Filter) -> ToGraph:
+def complete_info(what: dict[str, list[str]] | None, sorted_keys: list[str], load: Callable[[str], list[str]]) -> dict[str, list[str]]:
+    labels = {}
+
+    if what is None:
+        for key in sorted_keys:
+            labels[key] = load(key)
+    else:
+        for key in sorted_keys:
+            if key in what:
+                labels[key] = what[key]
+            else:
+                labels[key] = load(key)
+
+    return labels
+
+
+def load_data(table: ParsedTable, filter: Filter) -> ToGraph:
     book = openpyxl.load_workbook(filename=table.source_file)
     sheet_num = book.sheetnames.index(table.sheet)
 
@@ -132,46 +160,46 @@ def load_data(table: Table, filter: Filter) -> ToGraph:
 
     table_info = craft_table_info(sheet, table)
 
-    if filter.row_filter == "All":
-        row_labels = load_all_row_labels(sheet, table_info)
-    else:
-        row_labels = filter.row_filter
+    row_labels = complete_info(filter.row, table_info.row_labels.sorted_keys, lambda key: load_all_row_labels(sheet, table_info, key))
+    column_labels = complete_info(filter.column, table_info.column_labels.sorted_keys, lambda key: load_all_column_labels(sheet, table_info, key))
 
-    column_labels = []
-    for i, header_row in filter.header.items():
-        if header_row == "All":
-            column_labels.append(load_all_column_labels(sheet, table_info, i - 1))
-        else:
-            column_labels.append(header_row)
-
-    data = []
-
-    for key in row_labels:
-        row = get_index_in_column(
-            sheet, table_info.row_labels.x, table_info.row_labels.bounds.start, table_info.row_labels.bounds.end, key
-        )
-        if row is None:
-            raise ValueError(f"Row label {key} not found in table")
-
-        data.append(traverse(sheet, row, table_info, column_labels, table_info.column_labels.x_bounds.start))
+    data = traverse_row_labels(sheet, table_info, row_labels, column_labels, table_info.row_labels.y_bounds.start)
 
     # TODO: warn when there are non-numeric values
-    return ToGraph([row_labels] + column_labels, np.array(data))
+    return ToGraph(
+        [row_labels[key] for key in table_info.row_labels.sorted_keys] + [column_labels[key] for key in table_info.column_labels.sorted_keys], np.array(data)
+    )
 
 
-def traverse(sheet: Worksheet, row: int, table_info: TableInfo, series: list[list[str]], x: int, depth=0):
+def traverse(sheet: Worksheet, row: int, table_info: TableInfo, series: dict[str, list[str]], x: int, depth=0):
     if depth == len(series):
         return sheet.cell(row=row, column=x).value
 
     result = []
-    for item in series[depth]:
-        new_x = get_index_in_row(
-            sheet, table_info.column_labels.y[depth], x, table_info.column_labels.x_bounds.end, item
-        )
+    key = table_info.column_labels.sorted_keys[depth]
+    for item in series[key]:
+        new_x = get_index_in_row(sheet, table_info.column_labels.y[key], x, table_info.column_labels.x_bounds.end, item)
 
         if new_x is None:
             raise ValueError(f"Column label {item} not found in table")
 
         result.append(traverse(sheet, row, table_info, series, new_x, depth + 1))
+
+    return result
+
+
+def traverse_row_labels(sheet: Worksheet, table_info: TableInfo, series: dict[str, list[str]], column_series: dict[str, list[str]], y: int, depth=0):
+    if depth == len(series):
+        return traverse(sheet, y, table_info, column_series, table_info.column_labels.x_bounds.start)
+
+    result = []
+    key = table_info.row_labels.sorted_keys[depth]
+    for item in series[key]:
+        new_y = get_index_in_column(sheet, table_info.row_labels.x[key], y, table_info.row_labels.y_bounds.end, item)
+
+        if new_y is None:
+            raise ValueError(f"Row label {item} not found in table at column {key}")
+
+        result.append(traverse_row_labels(sheet, table_info, series, column_series, new_y, depth + 1))
 
     return result

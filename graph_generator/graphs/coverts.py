@@ -1,4 +1,5 @@
 import pandas as pd
+
 from graph_generator.dto.ToGraph import ToGraph
 
 

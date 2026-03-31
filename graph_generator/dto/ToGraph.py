@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-import numpy.typing as npt
+
 import numpy as np
+import numpy.typing as npt
 
 
 @dataclass

@@ -1,17 +1,19 @@
-from typing import Literal, Optional
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class Table(BaseModel):
-    source_file: str
+    source_file: Optional[str] = None
+    workbook: Optional[str] = None
     sheet: str
-    key_column: str
-    header: dict[int, int]
+    column_header: dict[str, int] | int
+    row_header: dict[str, str] | str
 
 
 class Filter(BaseModel):
-    row_filter: list[str] | Literal["All"]
-    header: dict[int, list[str] | Literal["All"]]
+    row: Optional[dict[str, list[str]]] = None
+    column: Optional[dict[str, list[str]]] = None
 
 
 class Graph(BaseModel):
@@ -21,9 +23,15 @@ class Graph(BaseModel):
     height: int = 6
 
 
+class Sheet(BaseModel):
+    path: str
+
+
 class Config(BaseModel):
+    sheets: Optional[dict[str, Sheet]] = None
     table: Optional[Table] = None
     tables: Optional[dict[str, Table]] = None
+    include_tables: Optional[list[str]] = None
     filter: Optional[Filter] = None
     filters: Optional[dict[str, Filter]] = None
     post_processing: Optional[dict] = None

@@ -4,3 +4,4 @@ openpyxl
 pydantic
 pandas
 seaborn
+python-docx
