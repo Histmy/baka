@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import re
 
 import docx.document
@@ -16,7 +18,7 @@ def add_custom_element(caption: Paragraph, name: str, key: str, value: str):
     return element
 
 
-def replace_placeholder_with_figure(doc: docx.document.Document, before: str, field_name: str, caption_text: str):
+def replace_placeholder_with_figure(doc: docx.document.Document, base: Path, before: str, field_name: str, caption_text: str):
     for p in doc.paragraphs:
         match = re.match(r"^\{\{ (.+?) \}\}$", p.text)
         if not match:
@@ -26,7 +28,7 @@ def replace_placeholder_with_figure(doc: docx.document.Document, before: str, fi
         img_path = f"{match.group(1)}.png"  # Extract the image path from the placeholder
 
         width = 16 / 2.54  # Convert cm to inches, full width in default document
-        p.add_run().add_picture(img_path, width=Inches(width))
+        p.add_run().add_picture(str(base / img_path), width=Inches(width))
 
         caption_p = p.insert_paragraph_before(style="Caption")
         p._p.addnext(caption_p._p)
@@ -40,7 +42,7 @@ def replace_placeholder_with_figure(doc: docx.document.Document, before: str, fi
         txt.text = f" SEQ {field_name} \\* ARABIC "
 
         # 3. Separate marker
-        add_custom_element(caption_p, "w:fldChar", "w:fldCharType", "end")
+        add_custom_element(caption_p, "w:fldChar", "w:fldCharType", "separate")
 
         # 4. Cached result (placeholder before update)
         caption_p.add_run("<invalid, update fields>")
@@ -55,7 +57,7 @@ def replace_placeholder_with_figure(doc: docx.document.Document, before: str, fi
 def example():
     document = docx.Document("base.docx")
 
-    replace_placeholder_with_figure(document, "Figure", "Figure", "This is a sample figure.")
+    replace_placeholder_with_figure(document, Path(os.getcwd()), "Figure", "Figure", "This is a sample figure.")
 
     document.save("edited.docx")
 
