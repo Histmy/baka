@@ -37,7 +37,7 @@ class AppState:
             "workbooks": [asdict(workbook) for workbook in self.workbooks],
             "tables": [{"name": table.name, "workbook": table.workbook.name if table.workbook else "", "stuff": table.stuff} for table in self.tables],
             "graphs": [{"name": graph.name, "tables": [table.name for table in graph.tables]} for graph in self.graphs],
-            "template": self.template,
+            "template": self.template if self.template else "",
         }
 
         with open(Path(path) / "config.toml", "wb") as f:
@@ -46,6 +46,8 @@ class AppState:
     def load(self, path: str):
         with open(Path(path) / "config.toml", "rb") as f:
             data = tomllib.load(f)
+
+        self.dir = path
 
         self.workbooks = [Workbook(**workbook) for workbook in data.get("workbooks", [])]
 
@@ -59,4 +61,4 @@ class AppState:
             for graph in data.get("graphs", [])
         ]
 
-        self.template = data.get("template")
+        self.template = data.get("template") or None

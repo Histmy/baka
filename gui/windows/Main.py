@@ -3,6 +3,7 @@ import tkinter.filedialog as fd
 import tkinter.messagebox as messagebox
 import tomli_w
 from pathlib import Path
+import shutil
 
 from graph_generator.main import make_split
 from gui.AppState import AppState, Graph
@@ -38,19 +39,58 @@ class Main(tk.Tk):
         self.config(menu=menubar)
 
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Exit", command=self.quit)
+        file_menu.add_command(label="New", command=self.new_project)
         file_menu.add_command(label="Save", command=self.save)
         file_menu.add_command(label="Load", command=self.load)
+        file_menu.add_command(label="Exit", command=self.quit)
         menubar.add_cascade(label="File", menu=file_menu)
 
     def redraw_graphs(self):
         self.graphs.redraw([graph.name for graph in self.appState.graphs])
 
+    def new_project(self):
+        while True:
+            name = fd.askdirectory()
+
+            if not name:
+                return
+
+            path = Path(name)
+
+            if any(path.iterdir()):
+                if messagebox.askyesno(
+                    "Directory not empty", "The selected directory is not empty and all files inside will be deleted. Do you want to continue?"
+                ):
+                    break
+            else:
+                break
+
+        # clear directory
+        for item in path.iterdir():
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+
+        # create necessary subdirectories
+        for subdir in ["graphs", "tables", "output"]:
+            (path / subdir).mkdir(exist_ok=True)
+
+        self.appState = AppState([], [], [], None, name)
+        self.redraw_graphs()
+
     def save(self):
         self.appState.save(self.appState.dir)
 
     def load(self):
-        self.appState.load(self.appState.dir)
+        path = fd.askdirectory()
+
+        print("Selected directory:", path)
+
+        if not path:
+            return
+
+        self.appState.load(path)
         self.redraw_graphs()
 
     def process(self):
@@ -72,9 +112,6 @@ class Main(tk.Tk):
             tomli_w.dump(conf, f)
 
         output_base = Path(self.appState.dir) / "output"
-
-        # TODO: remove when project creation exists
-        output_base.mkdir(exist_ok=True)
 
         for graph in self.appState.graphs:
             graph_path = Path(self.appState.dir) / "graphs" / (graph.name + ".toml")

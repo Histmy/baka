@@ -1,5 +1,6 @@
 from gui.windows.Main import Main
 
-if __name__ == "__main__":
+
+def main():
     app = Main()
     app.mainloop()

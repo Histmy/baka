@@ -60,8 +60,6 @@ class GraphWindow(Window):
     def edit(self):
         name = Path(self.appState.dir) / "graphs" / (self.graph.name + ".toml")
 
-        name.parent.mkdir(parents=True, exist_ok=True)
-
         includes = ", ".join([f'"{table.name}"' for table in self.graph.tables])
         header = f"include_tables = [{includes}]"
 

@@ -30,6 +30,9 @@ __pycache__/
 .venv/
 venv/
 ENV/
+main.spec
+dist/
+build/
 
 # IDE
 .idea/
