@@ -1,4 +1,6 @@
 import tkinter as tk
+import os.path
+from pathlib import Path
 
 from gui.AppState import AppState, Table, Workbook
 from gui.components.ListBox import ListBox
@@ -38,6 +40,12 @@ class TableWindow(Window):
         tk.Button(self, text="Close", command=self.close).pack(pady=10)
 
     def change_name(self):
+        # rename file if it exists
+        old_name = Path(self.appState.dir) / "tables" / (self.table.name + ".toml")
+        new_name = Path(self.appState.dir) / "tables" / (self.name_var.get() + ".toml")
+        if old_name != new_name and os.path.isfile(old_name):
+            os.rename(old_name, new_name)
+
         self.table.name = self.name_var.get()
         return True
 
@@ -73,4 +81,10 @@ class TableWindow(Window):
         self.spawn_window(WorkbookWindow, workbook)
         self.redraw_workbooks()
 
-    def edit(self): ...
+    def edit(self):
+        name = Path(self.appState.dir) / "tables" / (self.table.name + ".toml")
+
+        if not os.path.isfile(name):
+            with open(name, "w") as f:
+                f.write("[table]\n\n[filters]")
+        self.edit_file(str(name))

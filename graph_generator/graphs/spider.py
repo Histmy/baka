@@ -27,10 +27,6 @@ def make_spider_chart(data: ToGraph, config: Graph) -> None:
 
     ax.set_title("Spider Chart")
 
-    plt.show()
-    # plt.savefig("bar_chart_seaborn.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
 
 def make_one_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph):
     values = data.data

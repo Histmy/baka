@@ -9,7 +9,3 @@ def make_pie_chart(data: ToGraph) -> None:
 
     plt.pie(data.data, labels=data.labels[0], autopct="%1.1f%%", startangle=90)
     plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
-
-    plt.show()
-    # plt.savefig("bar_chart_seaborn.png", dpi=300, bbox_inches="tight")
-    plt.close()

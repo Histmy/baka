@@ -1,4 +1,7 @@
+import sys
 import tkinter as tk
+import os
+import subprocess
 
 
 class Window(tk.Toplevel):
@@ -16,3 +19,11 @@ class Window(tk.Toplevel):
         list_box.delete(0, tk.END)
         for item in items:
             list_box.insert(tk.END, item)
+
+    def edit_file(self, path: str):
+        if sys.platform == "win32":
+            os.startfile(path)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", path])
+        else:
+            subprocess.run(["xdg-open", path])

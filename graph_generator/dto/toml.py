@@ -28,7 +28,7 @@ class Sheet(BaseModel):
 
 
 class Config(BaseModel):
-    sheets: Optional[dict[str, Sheet]] = None
+    workbooks: Optional[dict[str, Sheet]] = None
     table: Optional[Table] = None
     tables: Optional[dict[str, Table]] = None
     include_tables: Optional[list[str]] = None

@@ -1,3 +1,5 @@
+from pathlib import Path
+import os.path
 import tkinter as tk
 
 from gui.AppState import AppState, Graph, Table
@@ -30,6 +32,8 @@ class GraphWindow(Window):
 
         tk.Button(self, text="Add Table", command=self.add_table).pack(pady=10)
 
+        tk.Button(self, text="Edit", command=self.edit).pack(pady=10)
+
         tk.Button(self, text="Close", command=self.close).pack(pady=10)
 
     def redraw_tables(self):
@@ -40,12 +44,43 @@ class GraphWindow(Window):
             self.tables.selection_set(index)
 
     def change_name(self):
+        # rename file if it exists
+        old_name = Path(self.appState.dir) / "graphs" / (self.graph.name + ".toml")
+        new_name = Path(self.appState.dir) / "graphs" / (self.name_var.get() + ".toml")
+        if old_name != new_name and os.path.isfile(old_name):
+            os.rename(old_name, new_name)
+
         self.graph.name = self.name_var.get()
         return True
 
     def close(self):
         self.change_name()
         self.destroy()
+
+    def edit(self):
+        name = Path(self.appState.dir) / "graphs" / (self.graph.name + ".toml")
+
+        name.parent.mkdir(parents=True, exist_ok=True)
+
+        includes = ", ".join([f'"{table.name}"' for table in self.graph.tables])
+        header = f"include_tables = [{includes}]"
+
+        if not os.path.isfile(name):
+            with open(name, "w") as f:
+                f.write(header + "\n\n[graph]\n")
+        else:
+            with open(name, "r+") as f:
+                content = f.read()
+                end_first_line = content.find("\n")
+                if end_first_line != -1:
+                    content = header + content[end_first_line:]
+                else:
+                    content = header
+                f.seek(0)
+                f.write(content)
+                f.truncate()
+
+        self.edit_file(str(name))
 
     def on_selected(self, selection: tuple[int]):
         self.graph.tables.clear()

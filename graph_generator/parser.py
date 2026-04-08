@@ -100,7 +100,7 @@ def load_simple_config(file_path: str):
     for table_name, table in tables.items():
         row_header = table.row_header if isinstance(table.row_header, dict) else {"default": table.row_header}
         parsed_tables[table_name] = ParsedTable(
-            source_file=lookup_workbook(table.source_file, table.workbook, data.sheets or {}),
+            source_file=lookup_workbook(table.source_file, table.workbook, data.workbooks or {}),
             sheet=table.sheet,
             column_header=table.column_header if isinstance(table.column_header, dict) else {"default": table.column_header},
             row_header={key: excel_col_to_num(value) for key, value in row_header.items()},
@@ -159,7 +159,7 @@ def load_split_config(tables_file: str, graph_file: str):
         row_header = av.row_header if isinstance(av.row_header, dict) else {"default": av.row_header}
 
         tables[table] = ParsedTable(
-            source_file=lookup_workbook(av.source_file, av.workbook, tables_data.sheets or {}),
+            source_file=lookup_workbook(av.source_file, av.workbook, tables_data.workbooks or {}),
             sheet=av.sheet,
             column_header=av.column_header if isinstance(av.column_header, dict) else {"default": av.column_header},
             row_header={key: excel_col_to_num(value) for key, value in row_header.items()},

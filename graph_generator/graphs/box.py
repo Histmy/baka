@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -17,10 +16,6 @@ def make_box_chart(data: ToGraph) -> None:
     ax.set_xlabel("X-axis")
     ax.set_ylabel("Y-axis")
     ax.set_title("Box Chart")
-
-    plt.show()
-    # plt.savefig("box_chart_seaborn.png", dpi=300, bbox_inches="tight")
-    plt.close()
 
 
 def make_one_dimensional_chart(data: ToGraph):
