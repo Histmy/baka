@@ -1,8 +1,9 @@
 matplotlib
 numpy
 openpyxl
-pydantic
 pandas
-seaborn
+pydantic
 python-docx
+seaborn
+tkinter
 tomli-w

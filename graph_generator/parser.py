@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from tomllib import load
 from typing import Optional
 
-from graph_generator.dto.toml import Config, Filter, Sheet
-from graph_generator.dto.toml import Table as TableConfig
+from graph_generator.dto.toml import Config, Workbook
 
 
 def excel_col_to_num(col: str):
@@ -19,6 +18,12 @@ class ParsedTable:
     sheet: str
     column_header: dict[str, int]
     row_header: dict[str, int]
+
+
+@dataclass
+class ParsedFilter:
+    row: Optional[dict[str, list[str]]] = None
+    column: Optional[dict[str, list[str]]] = None
 
 
 def load_toml_file(file_path: str):
@@ -60,34 +65,26 @@ def load_graph_config(config: Config):
     raise ValueError("No 'graph' key found in the data.")
 
 
-def verify_correspondence(tables: dict, filters: dict):
-    table_keys = set(tables.keys())
-    filter_keys = set(filters.keys())
+def verify_filters(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], strict: bool = True):
+    """
+    Verify that each filter only references existing row and column headers.
+    If strict is True, also check that each filter must have a corresponding table.
+    """
+    for table_name, filter in filters.items():
+        if table_name not in tables:
+            if strict:
+                raise ValueError(f"Filter specified for table '{table_name}', but no such table found.")
+            continue
 
-    if table_keys != filter_keys:
-        missing_in_filters = table_keys - filter_keys
-        missing_in_tables = filter_keys - table_keys
+        table = tables[table_name]
 
-        error_messages = []
-        if missing_in_filters:
-            s = "s" if len(missing_in_filters) > 1 else ""
-            error_messages.append(f"Filter{s} missing for table{s}: {', '.join(missing_in_filters)}")
-        if missing_in_tables:
-            s = "s" if len(missing_in_tables) > 1 else ""
-            error_messages.append(f"Table{s} missing for filter{s}: {', '.join(missing_in_tables)}")
+        if filter.row and not filter.row.keys() <= table.row_header.keys():
+            raise ValueError(f"Filter for table '{table_name}' contains undefined row headers: {set(filter.row.keys()) - set(table.row_header.keys())}")
 
-        raise ValueError("Correspondence check failed: " + "; ".join(error_messages))
-
-
-def verify_filters(tables: dict[str, TableConfig], filters: dict[str, Filter]):
-    missing = []
-    for table in tables:
-        if table not in filters:
-            missing.append(table)
-
-    if missing:
-        s = "s" if len(missing) > 1 else ""
-        raise ValueError(f"Filter{s} missing for table{s}: {', '.join(missing)}")
+        if filter.column and not filter.column.keys() <= table.column_header.keys():
+            raise ValueError(
+                f"Filter for table '{table_name}' contains undefined column headers: {set(filter.column.keys()) - set(table.column_header.keys())}"
+            )
 
 
 def load_simple_config(file_path: str):
@@ -106,31 +103,37 @@ def load_simple_config(file_path: str):
             row_header={key: excel_col_to_num(value) for key, value in row_header.items()},
         )
 
-    # Check if each table has a corresponding filter and vice versa
-    verify_correspondence(tables, filters)
+    parsed_filters: dict[str, ParsedFilter] = {}
+    for filter_name, filter in filters.items():
+        parsed_filters[filter_name] = ParsedFilter(
+            row=filter.row if isinstance(filter.row, dict) else {"default": filter.row} if filter.row else None,
+            column=filter.column if isinstance(filter.column, dict) else {"default": filter.column} if filter.column else None,
+        )
+
+    verify_filters(parsed_tables, parsed_filters)
 
     post_processing = data.post_processing if data.post_processing is not None else {}
 
     graph_config = load_graph_config(data)
 
-    return parsed_tables, filters, post_processing, graph_config
+    return parsed_tables, parsed_filters, post_processing, graph_config
 
 
-def lookup_workbook(source_file: Optional[str], workbook: Optional[str], sheets: dict[str, Sheet]) -> str:
+def lookup_workbook(source_file: Optional[str], workbook: Optional[str], workbooks: dict[str, Workbook]) -> str:
     if source_file is not None:
         return source_file
 
     if workbook is None:
         raise ValueError("Either 'source_file' or 'workbook' must be specified for a table.")
 
-    if workbook in sheets:
-        path = sheets[workbook].path
+    if workbook in workbooks:
+        path = workbooks[workbook].path
         if path is None:
-            raise ValueError(f"Worksheet '{workbook}' does not have a 'source_file' specified.")
+            raise ValueError(f"Workbook '{workbook}' does not have a 'source_file' specified.")
 
         return path
 
-    raise ValueError(f"Worksheet for table '{workbook}' not found.")
+    raise ValueError(f"Workbook for table '{workbook}' not found.")
 
 
 def deep_merge(d1, d2):
@@ -168,17 +171,20 @@ def load_split_config(tables_file: str, graph_file: str):
     # Load filters from both configurations and merge them, giving precedence to filter that apply only to the current graph
     a = load_filters(tables_data)
     b = load_filters(graph_data)
-    filters = a
-    for key, value in b.items():
+    filters: dict[str, ParsedFilter] = {}
+    for key, value in (*a.items(), *b.items()):
         if key not in filters:
-            filters[key] = value
+            filters[key] = ParsedFilter(
+                row=value.row if isinstance(value.row, dict) else {"default": value.row} if value.row else None,
+                column=value.column if isinstance(value.column, dict) else {"default": value.column} if value.column else None,
+            )
         else:
             for attr in ["row", "column"]:
                 if getattr(value, attr) is not None:
                     setattr(filters[key], attr, deep_merge(getattr(filters[key], attr) or {}, getattr(value, attr)))
 
     # Check if each table has a corresponding filter and vice versa
-    verify_filters(available_tables, filters)
+    verify_filters(tables, filters, False)
 
     post_processing = graph_data.post_processing if graph_data.post_processing is not None else {}
 

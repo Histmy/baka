@@ -12,8 +12,8 @@ class Table(BaseModel):
 
 
 class Filter(BaseModel):
-    row: Optional[dict[str, list[str]]] = None
-    column: Optional[dict[str, list[str]]] = None
+    row: Optional[dict[str, list[str]] | list[str]] = None
+    column: Optional[dict[str, list[str]] | list[str]] = None
 
 
 class Graph(BaseModel):
@@ -23,12 +23,12 @@ class Graph(BaseModel):
     height: int = 6
 
 
-class Sheet(BaseModel):
+class Workbook(BaseModel):
     path: str
 
 
 class Config(BaseModel):
-    workbooks: Optional[dict[str, Sheet]] = None
+    workbooks: Optional[dict[str, Workbook]] = None
     table: Optional[Table] = None
     tables: Optional[dict[str, Table]] = None
     include_tables: Optional[list[str]] = None

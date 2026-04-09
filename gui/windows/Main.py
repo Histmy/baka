@@ -3,7 +3,6 @@ import tkinter.filedialog as fd
 import tkinter.messagebox as messagebox
 import tomli_w
 from pathlib import Path
-import shutil
 
 from graph_generator.main import make_split
 from gui.AppState import AppState, Graph
@@ -58,19 +57,9 @@ class Main(tk.Tk):
             path = Path(name)
 
             if any(path.iterdir()):
-                if messagebox.askyesno(
-                    "Directory not empty", "The selected directory is not empty and all files inside will be deleted. Do you want to continue?"
-                ):
-                    break
+                messagebox.showerror("Error", "Selected directory is not empty! Please select an empty directory.")
             else:
                 break
-
-        # clear directory
-        for item in path.iterdir():
-            if item.is_dir():
-                shutil.rmtree(item)
-            else:
-                item.unlink()
 
         # create necessary subdirectories
         for subdir in ["graphs", "tables", "output"]:

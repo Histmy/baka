@@ -6,8 +6,7 @@ import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 
 from graph_generator.dto.ToGraph import ToGraph
-from graph_generator.dto.toml import Filter
-from graph_generator.parser import ParsedTable
+from graph_generator.parser import ParsedFilter, ParsedTable
 
 
 @dataclass
@@ -149,7 +148,7 @@ def complete_info(what: dict[str, list[str]] | None, sorted_keys: list[str], loa
     return labels
 
 
-def load_data(table: ParsedTable, filter: Filter) -> ToGraph:
+def load_data(table: ParsedTable, filter: ParsedFilter) -> ToGraph:
     book = openpyxl.load_workbook(filename=table.source_file)
     sheet_num = book.sheetnames.index(table.sheet)
 

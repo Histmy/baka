@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from graph_generator.dto.toml import Filter, Graph
+from graph_generator.dto.toml import Graph
 from graph_generator.graphs.bar import make_bar_chart
 from graph_generator.graphs.box import make_box_chart
 from graph_generator.graphs.histogram import make_histogram_chart
@@ -9,11 +9,11 @@ from graph_generator.graphs.line import make_line_chart
 from graph_generator.graphs.pie import make_pie_chart
 from graph_generator.graphs.spider import make_spider_chart
 from graph_generator.loader import load_data
-from graph_generator.parser import ParsedTable, load_simple_config, load_split_config
+from graph_generator.parser import ParsedFilter, ParsedTable, load_simple_config, load_split_config
 from graph_generator.post_process import collapse
 
 
-def generate(tables: dict[str, ParsedTable], filters: dict[str, Filter], post_processing: dict, graph_config: Graph, path: Path) -> None:
+def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], post_processing: dict, graph_config: Graph, path: Path) -> None:
     all = []
 
     if len(tables) == 0:
@@ -86,8 +86,7 @@ def test() -> None:
 
     # make_box_chart(data)
 
-    # make_split("data/partial-tables.toml", "data/partial-graph.toml")
-    pass
+    make_split("data/partial-tables.toml", "data/partial-graph.toml", Path("./output.png"))
 
 
 if __name__ == "__main__":
