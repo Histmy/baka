@@ -1,9 +1,9 @@
 matplotlib
+nicegui
 numpy
 openpyxl
 pandas
 pydantic
 python-docx
 seaborn
-tkinter
 tomli-w
