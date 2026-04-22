@@ -1,13 +1,14 @@
-# Map of id -> label for every leaf node (populated while building the tree)
 import os
+import subprocess
+import sys
 import time
-import uuid
-
-from attr import asdict, dataclass
-from pathlib import Path
-import tomli_w
 import tomllib
-from typing import Optional, TypeVar, Generic
+import uuid
+from pathlib import Path
+from typing import Generic, Optional, TypeVar
+
+import tomli_w
+from attr import asdict, dataclass
 
 
 def generate_uuid7() -> uuid.UUID:
@@ -23,6 +24,15 @@ def generate_uuid7() -> uuid.UUID:
 
     # Cast the UUID object to a string before returning
     return uuid.UUID(bytes=bytes(uuid_bytes))
+
+
+def open_file(path: str):
+    if sys.platform == "win32":
+        os.startfile(path)
+    elif sys.platform == "darwin":
+        subprocess.run(["open", path])
+    else:
+        subprocess.run(["xdg-open", path])
 
 
 @dataclass
@@ -49,8 +59,13 @@ class Table:
 
 @dataclass
 class Graph:
+    id: str
     name: str
     tables: list[Table]
+
+    @classmethod
+    def new(cls, name: str, tables: list[Table]):
+        return cls(id=str(generate_uuid7()), name=name, tables=tables)
 
 
 class SelectedGraph:
@@ -88,6 +103,14 @@ class ObservableList(list[T], Generic[T]):
         super().remove(item)
         self._notify()
 
+    def extend(self, items):
+        super().extend(items)
+        self._notify()
+
+    def clear(self):
+        super().clear()
+        self._notify()
+
     def _notify(self):
         for callback in self._listeners:
             callback(self)
@@ -106,33 +129,48 @@ class AppState:
 
     selected_graph: SelectedGraph = SelectedGraph()
 
-    def save(self, path: str):
+    def reset(self, dir: str):
+        self.workbooks.clear()
+        self.tables.clear()
+        self.graphs.clear()
+        self.template = None
+        self.dir = dir
+        self.selected_graph.set(None)
+
+    def save(self):
+        if self.dir is None:
+            raise ValueError("No directory specified for saving the project.")
+
         data = {
             "workbooks": [asdict(workbook) for workbook in self.workbooks],
-            "tables": [{"name": table.name, "workbook": table.workbook.name if table.workbook else ""} for table in self.tables],
-            "graphs": [{"name": graph.name, "tables": [table.name for table in graph.tables]} for graph in self.graphs],
+            "tables": [{"id": table.id, "name": table.name, "workbook": table.workbook.id if table.workbook else ""} for table in self.tables],
+            "graphs": [{"id": graph.id, "name": graph.name, "tables": [table.id for table in graph.tables]} for graph in self.graphs],
             "template": self.template if self.template else "",
         }
 
-        with open(Path(path) / "config.toml", "wb") as f:
+        with open(Path(self.dir) / "config.toml", "wb") as f:
             tomli_w.dump(data, f)
 
-    @classmethod
-    def load(cls, path: str):
+    def load(self, path: str):
         with open(Path(path) / "config.toml", "rb") as f:
             data = tomllib.load(f)
 
-        workbooks = ObservableList(Workbook(**workbook) for workbook in data.get("workbooks", []))
+        self.workbooks.clear()
+        self.workbooks.extend(Workbook(**workbook) for workbook in data.get("workbooks", []))
 
-        tables = ObservableList(
-            [Table.new(name=table["name"], workbook=next((wb for wb in workbooks if wb.name == table["workbook"]))) for table in data.get("tables", [])]
-        )
+        self.tables.clear()
+        for table in data.get("tables", []):
+            workbook = next((wb for wb in self.workbooks if wb.id == table["workbook"]))
+            self.tables.append(Table(id=table["id"], name=table["name"], workbook=workbook))
 
-        graphs = ObservableList(
-            [
-                Graph(name=graph["name"], tables=[next((table for table in tables if table.name == table_name)) for table_name in graph["tables"]])
-                for graph in data.get("graphs", [])
-            ]
-        )
+        self.graphs.clear()
+        for graph in data.get("graphs", []):
+            tables = []
+            for table_id in graph["tables"]:
+                table = next((table for table in self.tables if table.id == table_id))
+                tables.append(table)
 
-        return cls(workbooks=workbooks, tables=tables, graphs=graphs, template=data.get("template") or None, dir=path)
+            self.graphs.append(Graph(id=graph["id"], name=graph["name"], tables=tables))
+
+        self.template = data.get("template", None)
+        self.dir = path

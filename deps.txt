@@ -6,4 +6,5 @@ pandas
 pydantic
 python-docx
 seaborn
+tk
 tomli-w

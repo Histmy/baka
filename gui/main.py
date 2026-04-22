@@ -1,32 +1,19 @@
 from nicegui import ui
-from gui.components import right_side, toolbar
-from gui.components.left_side import LeftSide
+
 from gui.app_state import AppState, Graph, ObservableList, Table, Workbook
+from gui.components import right_side
+from gui.components.left_side import LeftSide
+from gui.components.toolbar import Toolbar
 
 
 def build_state():
-    books: ObservableList[Workbook] = ObservableList(
-        [
-            Workbook.new("Sales Data", "/home/hims/skola/bakalarka/data/BSc_First-year-students_RU.xlsx"),
-            Workbook.new("Employee Records", "/home/hims/skola/bakalarka/data/BSc-First-year-students_UAS.xlsx"),
-        ]
-    )
+    books: ObservableList[Workbook] = ObservableList([])
 
-    tables: ObservableList[Table] = ObservableList(
-        [
-            Table.new("Sales", books[0]),
-            Table.new("Employees", books[1]),
-        ]
-    )
+    tables: ObservableList[Table] = ObservableList([])
 
-    graphs: ObservableList[Graph] = ObservableList(
-        [
-            Graph("Sales by Region", [tables[0]]),
-            Graph("Employee Count", [tables[1]]),
-        ]
-    )
+    graphs: ObservableList[Graph] = ObservableList([])
 
-    return AppState(workbooks=books, tables=tables, graphs=graphs, template="ahoj", dir="/home/hims/graftest")
+    return AppState(workbooks=books, tables=tables, graphs=graphs, template=None, dir="/hopefully/does/not/exist")
 
 
 app_state = build_state()
@@ -34,7 +21,7 @@ app_state = build_state()
 # ── Shared selection state ───────────────────────────────────────────────────
 
 
-toolbar.build()
+Toolbar(app_state)
 
 # ── Left drawer – tree with tickable leaves ──────────────────────────────────
 

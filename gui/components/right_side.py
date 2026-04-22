@@ -1,8 +1,8 @@
 from nicegui import ui
 
-from gui.components import bottom_banel
-from gui.components.top_panel import TopPanel
 from gui.app_state import AppState
+from gui.components.bottom_banel import BottomPanel
+from gui.components.top_panel import TopPanel
 
 
 def build(state: AppState):
@@ -11,4 +11,4 @@ def build(state: AppState):
 
         # TODO: make be at the bottom of the page
 
-        bottom_banel.build()
+        BottomPanel(state)
