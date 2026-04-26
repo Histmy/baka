@@ -12,8 +12,7 @@ from attr import asdict, dataclass
 
 
 def generate_uuid7() -> uuid.UUID:
-    """Generates a UUIDv7 and returns it as a TOML-serializable string."""
-
+    """Generates a UUIDv7."""
     timestamp_ms = int(time.time() * 1000)
     random_bytes = os.urandom(10)
 
@@ -69,8 +68,9 @@ class Graph:
 
 
 class SelectedGraph:
-    __graph: Optional[Graph] = None
-    __listeners: list = []
+    def __init__(self) -> None:
+        self.__graph: Optional[Graph] = None
+        self.__listeners: list = []
 
     def set(self, graph: Optional[Graph]):
         self.__graph = graph
@@ -160,16 +160,12 @@ class AppState:
 
         self.tables.clear()
         for table in data.get("tables", []):
-            workbook = next((wb for wb in self.workbooks if wb.id == table["workbook"]))
+            workbook = next(wb for wb in self.workbooks if wb.id == table["workbook"])
             self.tables.append(Table(id=table["id"], name=table["name"], workbook=workbook))
 
         self.graphs.clear()
         for graph in data.get("graphs", []):
-            tables = []
-            for table_id in graph["tables"]:
-                table = next((table for table in self.tables if table.id == table_id))
-                tables.append(table)
-
+            tables = [t for t in self.tables if t.id in graph["tables"]]
             self.graphs.append(Graph(id=graph["id"], name=graph["name"], tables=tables))
 
         self.template = data.get("template", None)

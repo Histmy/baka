@@ -1,101 +1,124 @@
-import asyncio
 from pathlib import Path
 
-from nicegui import ui
+import flet as ft
 
 from gui import app_state
 
 
 class TopPanel:
-    __state: app_state.AppState
-    __dropdown: ui.select
+    """Graph selection and management panel."""
 
-    def __init__(self, state: app_state.AppState):
-        self.__state = state
+    def __init__(self, page: ft.Page, state: app_state.AppState):
+        self._page = page
+        self._state = state
 
-        with ui.column().classes("p-8 w-full gap-6"):
-            ui.label("Control Panel").classes("text-2xl font-bold text-slate-700")
-            ui.separator()
+        self._dropdown = ft.Dropdown(
+            label="Graphs",
+            width=260,
+            options=[],
+        )
 
-            # Dropdown
-            with ui.column().classes("gap-1"):
-                ui.label("Graphs").classes("text-sm font-medium text-slate-500")
-                self.__dropdown = ui.select(
-                    options=[],
-                    on_change=self.__on_graph_change,
-                ).classes("w-64")
+        self._dropdown.on_select = self._on_graph_change
 
-            self.__redraw()
+        state.graphs.register_listener(lambda _: self._redraw())
 
-            self.__state.graphs.register_listener(lambda _: self.__redraw())
+    # ── public widget ─────────────────────────────────────────────────────────
 
-            # Buttons
-            with ui.column().classes("gap-3"):
-                ui.button(
-                    "Edit",
-                    icon="check_circle",  # TODO
-                    on_click=self.__edit,
-                ).props("unelevated").classes("bg-slate-700 text-white")
+    def build(self) -> ft.Container:
+        self._redraw()
 
-                ui.button(
-                    "Delete",
-                    icon="delete",
-                    on_click=lambda: ui.notify("Secondary action triggered!", position="top-right"),
-                ).props("outline").classes("text-slate-700")
+        return ft.Container(
+            padding=ft.padding.all(24),
+            content=ft.Column(
+                [
+                    ft.Text("Control Panel", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_700),
+                    ft.Divider(),
+                    self._dropdown,
+                    ft.Row(
+                        [
+                            ft.ElevatedButton(
+                                "Edit",
+                                icon=ft.Icons.EDIT,
+                                bgcolor=ft.Colors.BLUE_GREY_800,
+                                color=ft.Colors.WHITE,
+                                on_click=self._edit,
+                            ),
+                            ft.OutlinedButton(
+                                "Delete",
+                                icon=ft.Icons.DELETE,
+                                on_click=self._delete_graph,
+                            ),
+                            ft.OutlinedButton(
+                                "Add",
+                                icon=ft.Icons.ADD,
+                                on_click=self._add_graph,
+                            ),
+                        ],
+                        spacing=8,
+                        wrap=True,
+                    ),
+                ],
+                spacing=16,
+            ),
+        )
 
-                ui.button(
-                    "Add",
-                    icon="add",
-                    on_click=self.__add_graph,
-                ).props("outline").classes("text-slate-700")
+    # ── internals ─────────────────────────────────────────────────────────────
 
-            # TODO: add rename option
+    def _redraw(self):
+        self._dropdown.options = [
+            ft.dropdown.Option(g.name) for g in self._state.graphs
+        ]
+        # Keep current selection if it still exists
+        current = self._dropdown.value
+        if current not in [g.name for g in self._state.graphs]:
+            self._dropdown.value = None
+        self._page.update()
 
-        self.__state.graphs.register_listener(lambda _: self.__redraw())
+    def _add_graph(self, _e):
+        n = len(self._state.graphs) + 1
+        graph = app_state.Graph.new(name=f"New Graph {n}", tables=[])
+        self._state.graphs.append(graph)
 
-    def __redraw(self):
-        self.__dropdown.options = [graph.name for graph in self.__state.graphs]
-        self.__dropdown.update()
+        path = Path(self._state.dir) / "graphs" / (graph.id + ".toml")
+        path.write_text("\n\n\n[graph]\n")
 
-    def __add_graph(self):
-        ui.notify("Add graph action triggered!", position="top-right")
+        self._state.selected_graph.set(graph)
+        self._dropdown.value = graph.name
+        self._page.update()
 
-        graph = app_state.Graph.new(name=f"New Graph {len(self.__state.graphs) + 1}", tables=[])
-        self.__state.graphs.append(graph)
-
-        # create file
-        path = Path(self.__state.dir) / "graphs" / (graph.id + ".toml")
-        with open(path, "w") as f:
-            f.write("\n\n\n[graph]\n")
-
-        # select it
-        self.__state.selected_graph.set(self.__state.graphs[-1])
-        self.__dropdown.value = self.__state.graphs[-1].name
-
-    def __on_graph_change(self, e):
-        self.__state.selected_graph.set(next((graph for graph in self.__state.graphs if graph.name == e.value), None))
-        ui.notify(f"Selected graphhh: {e.value}", position="top-right")
-
-    async def __edit(self):
-        selected = self.__state.selected_graph.get()
+    def _delete_graph(self, _e):
+        selected = self._state.selected_graph.get()
         if not selected:
-            ui.notify("No graph selected!", position="top-right")
+            self._snack("No graph selected!")
+            return
+        self._state.graphs.remove(selected)
+        self._state.selected_graph.set(None)
+        self._dropdown.value = None
+        self._page.update()
+
+    def _on_graph_change(self, e):
+        graph = next((g for g in self._state.graphs if g.name == e.control.value), None)
+        self._state.selected_graph.set(graph)
+
+    def _edit(self):
+        selected = self._state.selected_graph.get()
+        if not selected:
+            self._snack("No graph selected!")
             return
 
-        path = Path(self.__state.dir) / "graphs" / (selected.id + ".toml")
-
-        includes = ", ".join([f'"{table.name}"' for table in selected.tables])
+        path = Path(self._state.dir) / "graphs" / (selected.id + ".toml")
+        includes = ", ".join(f'"{t.name}"' for t in selected.tables)
         header = f"include_tables = [{includes}]"
 
-        with open(path, "r+") as f:
-            content = f.read()
+        try:
+            content = path.read_text()
             end_first_line = content.find("\n")
-            if end_first_line != -1:
-                content = header + content[end_first_line:]
-            else:
-                content = header
-            f.seek(0)
-            f.write(content)
-            f.truncate()
+            content = header + (content[end_first_line:] if end_first_line != -1 else "")
+            path.write_text(content)
+            app_state.open_file(str(path))
+        except Exception as exc:
+            self._snack(f"Could not open graph file: {exc}")
 
-        await asyncio.to_thread(app_state.open_file, str(path))
+    def _snack(self, msg: str):
+        self._page.overlay.append(ft.SnackBar(ft.Text(msg), open=True))
+        self._page.update()

@@ -1,93 +1,123 @@
-import asyncio
 from pathlib import Path
-from tkinter import filedialog
 
-from nicegui import ui
+import flet as ft
 
 from gui import app_state
 
 
 class Toolbar:
-    __state: app_state.AppState
+    """Top app-bar with File / Edit / About menus.
 
-    def __init__(self, state: app_state.AppState):
-        self.__state = state
+    All file-picking is done via Flet's native FilePicker / DirectoryPicker —
+    no tkinter import anywhere.
+    """
+    _page: ft.Page
+    _state: app_state.AppState
 
-        with ui.header(elevated=True).classes("items-center justify-between px-4 bg-slate-800"):
-            ui.label("MyApp").classes("text-white font-bold text-lg")
+    def __init__(self, page: ft.Page, state: app_state.AppState):
+        self._page = page
+        self._state = state
 
-            with ui.row().classes("gap-1"):
-                with ui.button("File", icon="folder_open").classes("text-white").props("flat"):
-                    with ui.menu():
-                        ui.menu_item("New", self.__new)
-                        ui.menu_item("Open", self.__load)
-                        ui.menu_item("Save", self.__save)
-                        ui.menu_item("Save As", self.__save_as)
-                        ui.separator()
-                        ui.menu_item("Exit", lambda: self.__menu_action("Exit"))
+    # ── public control ────────────────────────────────────────────────────────
 
-                with ui.button("Edit", icon="edit").classes("text-white").props("flat"):
-                    with ui.menu():
-                        ui.menu_item("Undo", lambda: self.__menu_action("Undo"))
-                        ui.menu_item("Redo", lambda: self.__menu_action("Redo"))
-                        ui.separator()
-                        ui.menu_item("Cut", lambda: self.__menu_action("Cut"))
-                        ui.menu_item("Copy", lambda: self.__menu_action("Copy"))
-                        ui.menu_item("Paste", lambda: self.__menu_action("Paste"))
+    def build(self) -> ft.AppBar:
+        return ft.AppBar(
+            title=ft.Text("MyApp", weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+            bgcolor=ft.Colors.BLUE_GREY_900,
+            actions=[
+                ft.PopupMenuButton(
+                    content=ft.Row(
+                        [ft.Icon(ft.Icons.FOLDER_OPEN, color=ft.Colors.WHITE), ft.Text("File", color=ft.Colors.WHITE)],
+                        spacing=4,
+                    ),
+                    items=[
+                        ft.PopupMenuItem(content="New", on_click=self._new),
+                        ft.PopupMenuItem(content="Open", on_click=self._load),
+                        ft.PopupMenuItem(content="Save", on_click=self._save),
+                        ft.PopupMenuItem(content="Save As", on_click=self._save_as),
+                        ft.PopupMenuItem(),  # divider
+                        ft.PopupMenuItem(content="Exit", on_click=lambda _: self._page.window.close()),
+                    ],
+                ),
+            ],
+            actions_padding=20,
+        )
 
-                with ui.button("About", icon="info").classes("text-white").props("flat"):
-                    with ui.menu():
-                        ui.menu_item("Documentation", lambda: self.__menu_action("Documentation"))
-                        ui.menu_item("About MyApp", lambda: self.__menu_action("About MyApp"))
+    # ── helpers ───────────────────────────────────────────────────────────────
 
-    def __menu_action(self, label: str):
-        ui.notify(f'"{label}" clicked', position="top")
+    def _error(self, msg: str):
+        self._page.overlay.append(ft.SnackBar(
+            ft.Text(msg),
+            bgcolor=ft.Colors.RED_700,
+            open=True,
+        ))
+        self._page.update()
 
-    async def __new(self):
-        path = await self.__prepare_for_save()
+    def _notify(self, msg: str):
+        self._page.overlay.append(ft.SnackBar(
+            ft.Text(msg),
+            open=True,
+        ))
+        self._page.update()
+
+    # ── menu actions ──────────────────────────────────────────────────────────
+
+    async def _new(self):
+        path = await ft.FilePicker().get_directory_path(dialog_title="Select Empty Directory for New Project")
+
         if not path:
             return
 
-        self.__state.reset(str(path))
-        await self.__save()
+        path = Path(path)
 
-    async def __prepare_for_save(self):
-        while True:
-            path_name = await asyncio.to_thread(filedialog.askdirectory, title="Select Directory to Save Project")
+        # Validate: must be empty
+        if any(path.iterdir()):
+            self._error("Selected directory is not empty! Please choose an empty directory.")
+            return
 
-            if not path_name:
-                return
-
-            path = Path(path_name)
-
-            if any(path.iterdir()):
-                # messagebox.showerror("Error", "Selected directory is not empty! Please select an empty directory.")
-                ui.notify("Selected directory is not empty! Please select an empty directory.", position="top", color="red")
-                # TODO: better
-            else:
-                break
-
-        # create necessary subdirectories
+        # Create standard subdirs
         for subdir in ["graphs", "tables", "output"]:
-            (path / subdir).mkdir()
+            (path / subdir).mkdir(exist_ok=True)
 
-        self.__state.dir = str(path)
+        self._state.dir = str(path)
 
-        return path
+        self._state.reset(str(path))
+        try:
+            self._state.save()
+            self._notify("New project created")
+        except Exception as exc:
+            self._error(str(exc))
 
-    async def __save_as(self):
-        path = await self.__prepare_for_save()
-        if path:
-            self.__state.save()
+    async def _save_as(self):
+        path = await ft.FilePicker().get_directory_path(dialog_title="Select Directory to Save Project")
 
-    async def __save(self):
-        if self.__state.dir is None:
-            await self.__save_as()
+        if not path:
+            return
+
+        try:
+            self._state.save()
+            self._notify("Project saved")
+        except Exception as exc:
+            self._error(str(exc))
+
+    async def _save(self):
+        if not self._state.dir or not Path(self._state.dir).exists():
+            await self._save_as()
         else:
-            self.__state.save()
+            try:
+                self._state.save()
+                self._notify("Project saved")
+            except Exception as exc:
+                self._error(str(exc))
 
-    async def __load(self):
-        path = await asyncio.to_thread(filedialog.askdirectory, title="Select Directory of Existing Project")
+    async def _load(self):
+        path = await ft.FilePicker().get_directory_path(dialog_title="Select Directory of Existing Project")
 
-        if path:
-            self.__state.load(path)
+        if not path:
+            return
+
+        try:
+            self._state.load(path)
+            self._notify("Project loaded")
+        except Exception as exc:
+            self._error(f"Failed to load project: {exc}")

@@ -1,36 +1,54 @@
-from nicegui import ui
+import flet as ft
 
-from gui.app_state import AppState, Graph, ObservableList, Table, Workbook
-from gui.components import right_side
+from gui.app_state import AppState, ObservableList, Graph, Table, Workbook
 from gui.components.left_side import LeftSide
 from gui.components.toolbar import Toolbar
+from gui.components import right_side
 
 
-def build_state():
-    books: ObservableList[Workbook] = ObservableList([])
-
-    tables: ObservableList[Table] = ObservableList([])
-
-    graphs: ObservableList[Graph] = ObservableList([])
-
-    return AppState(workbooks=books, tables=tables, graphs=graphs, template=None, dir="/hopefully/does/not/exist")
-
-
-app_state = build_state()
-
-# ── Shared selection state ───────────────────────────────────────────────────
+def build_state() -> AppState:
+    return AppState(
+        workbooks=ObservableList([]),
+        tables=ObservableList([]),
+        graphs=ObservableList([]),
+        template=None,
+        dir="/hopefully/does/not/exist",
+    )
 
 
-Toolbar(app_state)
+def main(page: ft.Page):
+    page.title = "MyApp"
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.window.width = 1100
+    page.window.height = 720
+    page.window.min_width = 800
+    page.window.min_height = 500
+    page.padding = 0
 
-# ── Left drawer – tree with tickable leaves ──────────────────────────────────
+    state = build_state()
 
-LeftSide(app_state)
+    # ── Toolbar (AppBar) ─────────────────────────────────────────────────────
+    toolbar = Toolbar(page, state)
+    page.appbar = toolbar.build()
+
+    # ── Layout: left drawer + right content ──────────────────────────────────
+    left = LeftSide(page, state)
+    right = right_side.build(page, state)
+
+    page.add(
+        ft.Row(
+            [
+                left.build(),
+                ft.VerticalDivider(width=1),
+                right,
+            ],
+            expand=True,
+            spacing=0,
+        )
+    )
+
+    page.update()
 
 
-# ── Main content – right panel ───────────────────────────────────────────────
-
-right_side.build(app_state)
-
-
-ui.run(title="MyApp", dark=False)
+if __name__ == "__main__":
+    ft.app(target=main)
