@@ -1,9 +1,9 @@
 import flet as ft
 
-from gui.app_state import AppState, ObservableList, Graph, Table, Workbook
+from gui.app_state import AppState, ObservableList
+from gui.components import right_side
 from gui.components.left_side import LeftSide
 from gui.components.toolbar import Toolbar
-from gui.components import right_side
 
 
 def build_state() -> AppState:
@@ -51,4 +51,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.run(main)

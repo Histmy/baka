@@ -1,16 +1,16 @@
 import tomllib
 from pathlib import Path
 
+import docx
 import flet as ft
 import tomli_w
+
 from graph_generator.main import make_split
-from word_replace.main import replace_placeholder_with_figure
-import docx
-
 from gui import app_state
+from word_replace.main import replace_placeholder_with_figure
 
 
-class BottomPanel:
+class TemplateAndProcess:
     """Template selection and document processing panel."""
 
     def __init__(self, page: ft.Page, state: app_state.AppState):
@@ -28,14 +28,13 @@ class BottomPanel:
 
     def build(self) -> ft.Container:
         return ft.Container(
-            padding=ft.padding.symmetric(horizontal=24, vertical=8),
-            content=ft.Column(
+            padding=ft.padding.symmetric(horizontal=24, vertical=16),
+            content=ft.Row(
                 [
-                    ft.Divider(),
                     ft.Row(
                         [
                             ft.ElevatedButton(
-                                "Select Template…",
+                                "Select Template",
                                 icon=ft.Icons.DESCRIPTION,
                                 on_click=self._select_template,
                             ),
@@ -43,6 +42,7 @@ class BottomPanel:
                         ],
                         spacing=10,
                     ),
+                    ft.Container(expand=True),
                     ft.ElevatedButton(
                         "Process",
                         icon=ft.Icons.PLAY_ARROW,
@@ -57,7 +57,7 @@ class BottomPanel:
 
     # ── template picker ───────────────────────────────────────────────────────
 
-    async def _select_template(self, _e):
+    async def _select_template(self):
         files = await ft.FilePicker().pick_files(
             dialog_title="Select Template",
             file_type=ft.FilePickerFileType.CUSTOM,
@@ -72,7 +72,7 @@ class BottomPanel:
 
     # ── process ───────────────────────────────────────────────────────────────
 
-    async def _process(self, _e):
+    async def _process(self):
         if not self._state.template:
             self._snack("No template selected!", error=True)
             return
@@ -124,9 +124,11 @@ class BottomPanel:
         return {"workbooks": workbooks, "tables": tables, "filters": filters}
 
     def _snack(self, msg: str, *, error: bool = False):
-        self._page.overlay.append(ft.SnackBar(
-            ft.Text(msg),
-            bgcolor=ft.Colors.RED_700 if error else None,
-            open=True,
-        ))
+        self._page.overlay.append(
+            ft.SnackBar(
+                ft.Text(msg),
+                bgcolor=ft.Colors.RED_700 if error else None,
+                open=True,
+            )
+        )
         self._page.update()

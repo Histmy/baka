@@ -5,7 +5,7 @@ import flet as ft
 from gui import app_state
 
 
-class TopPanel:
+class GraphSelect:
     """Graph selection and management panel."""
 
     def __init__(self, page: ft.Page, state: app_state.AppState):
@@ -31,7 +31,6 @@ class TopPanel:
             padding=ft.padding.all(24),
             content=ft.Column(
                 [
-                    ft.Text("Control Panel", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_700),
                     ft.Divider(),
                     self._dropdown,
                     ft.Row(
@@ -65,16 +64,14 @@ class TopPanel:
     # ── internals ─────────────────────────────────────────────────────────────
 
     def _redraw(self):
-        self._dropdown.options = [
-            ft.dropdown.Option(g.name) for g in self._state.graphs
-        ]
+        self._dropdown.options = [ft.dropdown.Option(g.name) for g in self._state.graphs]
         # Keep current selection if it still exists
         current = self._dropdown.value
         if current not in [g.name for g in self._state.graphs]:
             self._dropdown.value = None
         self._page.update()
 
-    def _add_graph(self, _e):
+    def _add_graph(self):
         n = len(self._state.graphs) + 1
         graph = app_state.Graph.new(name=f"New Graph {n}", tables=[])
         self._state.graphs.append(graph)
@@ -86,7 +83,7 @@ class TopPanel:
         self._dropdown.value = graph.name
         self._page.update()
 
-    def _delete_graph(self, _e):
+    def _delete_graph(self):
         selected = self._state.selected_graph.get()
         if not selected:
             self._snack("No graph selected!")

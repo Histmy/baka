@@ -1,4 +1,5 @@
 import flet as ft
+
 from gui.app_state import Table
 
 
@@ -45,10 +46,10 @@ class EditTableDialog:
 
     # ── actions ──────────────────────────────────────────────────────────────
 
-    def _open_editor(self, _e):
+    def _open_editor(self):
         self._open_callback(self._table.id)
 
-    def _save(self, _e):
+    def _save(self):
         new_name = self._name_field.value.strip()
         if new_name:
             self._table.name = new_name
@@ -56,7 +57,7 @@ class EditTableDialog:
         if self._on_saved:
             self._on_saved()
 
-    def _cancel(self, _e):
+    def _cancel(self):
         self._close()
 
     def _close(self):

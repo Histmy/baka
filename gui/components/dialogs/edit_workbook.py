@@ -1,4 +1,5 @@
 import flet as ft
+
 from gui.app_state import Workbook
 
 
@@ -57,7 +58,7 @@ class EditWorkbookDialog:
 
     # ── file picker ──────────────────────────────────────────────────────────
 
-    async def _pick_file(self, _e):
+    async def _pick_file(self):
         files = await ft.FilePicker().pick_files(
             dialog_title="Select Workbook Source",
             allowed_extensions=["xlsx", "xls"],
@@ -74,7 +75,7 @@ class EditWorkbookDialog:
 
     # ── actions ──────────────────────────────────────────────────────────────
 
-    def _save(self, _e):
+    def _save(self):
         new_name = self._name_field.value.strip()
         if new_name:
             self._workbook.name = new_name
@@ -82,7 +83,7 @@ class EditWorkbookDialog:
         if self._on_saved:
             self._on_saved()
 
-    def _cancel(self, _e):
+    def _cancel(self):
         self._close()
 
     def _close(self):

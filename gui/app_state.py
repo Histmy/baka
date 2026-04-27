@@ -84,7 +84,7 @@ class SelectedGraph:
 
     def __notify(self):
         for callback in self.__listeners:
-            callback(self.__graph)
+            callback()
 
 
 T = TypeVar("T")

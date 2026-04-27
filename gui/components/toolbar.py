@@ -11,6 +11,7 @@ class Toolbar:
     All file-picking is done via Flet's native FilePicker / DirectoryPicker —
     no tkinter import anywhere.
     """
+
     _page: ft.Page
     _state: app_state.AppState
 
@@ -27,7 +28,7 @@ class Toolbar:
             actions=[
                 ft.PopupMenuButton(
                     content=ft.Row(
-                        [ft.Icon(ft.Icons.FOLDER_OPEN, color=ft.Colors.WHITE), ft.Text("File", color=ft.Colors.WHITE)],
+                        [ft.Icon(ft.Icons.MENU, color=ft.Colors.WHITE)],
                         spacing=4,
                     ),
                     items=[
@@ -35,8 +36,6 @@ class Toolbar:
                         ft.PopupMenuItem(content="Open", on_click=self._load),
                         ft.PopupMenuItem(content="Save", on_click=self._save),
                         ft.PopupMenuItem(content="Save As", on_click=self._save_as),
-                        ft.PopupMenuItem(),  # divider
-                        ft.PopupMenuItem(content="Exit", on_click=lambda _: self._page.window.close()),
                     ],
                 ),
             ],
@@ -46,18 +45,22 @@ class Toolbar:
     # ── helpers ───────────────────────────────────────────────────────────────
 
     def _error(self, msg: str):
-        self._page.overlay.append(ft.SnackBar(
-            ft.Text(msg),
-            bgcolor=ft.Colors.RED_700,
-            open=True,
-        ))
+        self._page.overlay.append(
+            ft.SnackBar(
+                ft.Text(msg),
+                bgcolor=ft.Colors.RED_700,
+                open=True,
+            )
+        )
         self._page.update()
 
     def _notify(self, msg: str):
-        self._page.overlay.append(ft.SnackBar(
-            ft.Text(msg),
-            open=True,
-        ))
+        self._page.overlay.append(
+            ft.SnackBar(
+                ft.Text(msg),
+                open=True,
+            )
+        )
         self._page.update()
 
     # ── menu actions ──────────────────────────────────────────────────────────
