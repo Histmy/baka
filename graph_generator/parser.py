@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from tomllib import load
 from typing import Optional
 
-from graph_generator.dto.toml import Config, Workbook
+from graph_generator.dto.toml import Config, Filter, Workbook
 
 
 def excel_col_to_num(col: str):
@@ -48,14 +48,15 @@ def load_tables(config: Config):
     raise ValueError("No 'table' or 'tables' key found in the data.")
 
 
-def load_filters(config: Config):
+def load_filters(config: Config) -> dict[str, Filter]:
     if config.filter:
         return {"main": config.filter}
 
     if config.filters:
         return config.filters
 
-    raise ValueError("No 'filter' or 'filters' key found in the data.")
+    # raise ValueError("No 'filter' or 'filters' key found in the data.") TODO: not sure
+    return {}
 
 
 def load_graph_config(config: Config):

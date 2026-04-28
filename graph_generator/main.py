@@ -1,6 +1,8 @@
-import matplotlib.pyplot as plt
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+
+from graph_generator.dto.ToGraph import ToGraph
 from graph_generator.dto.toml import Graph
 from graph_generator.graphs.bar import make_bar_chart
 from graph_generator.graphs.box import make_box_chart
@@ -14,15 +16,15 @@ from graph_generator.post_process import collapse
 
 
 def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], post_processing: dict, graph_config: Graph, path: Path) -> None:
-    all = []
+    all: list[ToGraph] = []
 
     if len(tables) == 0:
         raise ValueError("No tables specified in the configuration.")
 
     for table_name in tables:
-        vystup = load_data(tables[table_name], filters[table_name])
+        output = load_data(tables[table_name], filters[table_name])
 
-        processed = collapse(vystup)
+        processed = collapse(output)
         # processed = simple_transpose(processed)
         all.append(processed)
 
@@ -31,9 +33,9 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
 
     match graph_config.type.lower():
         case "bar":
-            make_bar_chart(processed)
+            make_bar_chart(processed, graph_config)
         case "line":
-            make_line_chart(processed)
+            make_line_chart(processed, graph_config)
         case "pie":
             make_pie_chart(processed)
         case "spider":

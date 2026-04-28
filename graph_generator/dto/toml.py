@@ -21,6 +21,9 @@ class Graph(BaseModel):
     type: str
     width: int = 10
     height: int = 6
+    x_axis: Optional[str] = None
+    legend: Optional[str] = None
+    style: Optional[str] = None
 
 
 class Workbook(BaseModel):

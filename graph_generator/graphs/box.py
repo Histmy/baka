@@ -31,7 +31,7 @@ def make_one_dimensional_chart(data: ToGraph):
 
 def make_two_dimensional_chart(data: ToGraph):
     rows = []
-    for x_label, values in zip(data.labels[0], data.data):
+    for x_label, values in zip(data.labels[0].values, data.data):
         for y in values:
             rows.append({"x": x_label, "y": y})
 

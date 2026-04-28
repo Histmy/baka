@@ -5,7 +5,7 @@ import numpy as np
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 
-from graph_generator.dto.ToGraph import ToGraph
+from graph_generator.dto.ToGraph import Label, ToGraph
 from graph_generator.parser import ParsedFilter, ParsedTable
 
 
@@ -83,8 +83,8 @@ def craft_table_info(sheet: Worksheet, table: ParsedTable) -> TableInfo:
         last_column += 1
 
     return TableInfo(
-        column_labels=ColumnLabels(Bounds(left, last_column), {key: col for key, col in table.column_header.items()}, ordered_column_labels),
-        row_labels=RowLabels(Bounds(top, last_row), {key: row for key, row in table.row_header.items()}, ordered_row_labels),
+        column_labels=ColumnLabels(Bounds(left, last_column), table.column_header, ordered_column_labels),
+        row_labels=RowLabels(Bounds(top, last_row), table.row_header, ordered_row_labels),
     )
 
 
@@ -164,15 +164,20 @@ def load_data(table: ParsedTable, filter: ParsedFilter) -> ToGraph:
 
     data = traverse_row_labels(sheet, table_info, row_labels, column_labels, table_info.row_labels.y_bounds.start)
 
-    # TODO: warn when there are non-numeric values
     return ToGraph(
-        [row_labels[key] for key in table_info.row_labels.sorted_keys] + [column_labels[key] for key in table_info.column_labels.sorted_keys], np.array(data)
+        [Label(name=key, values=row_labels[key]) for key in table_info.row_labels.sorted_keys]
+        + [Label(name=key, values=column_labels[key]) for key in table_info.column_labels.sorted_keys],
+        np.array(data),
     )
 
 
 def traverse(sheet: Worksheet, row: int, table_info: TableInfo, series: dict[str, list[str]], x: int, depth=0):
     if depth == len(series):
-        return sheet.cell(row=row, column=x).value
+        value = sheet.cell(row=row, column=x).value
+        try:
+            return float(value)  # type: ignore
+        except (ValueError, TypeError):
+            return 0.0
 
     result = []
     key = table_info.column_labels.sorted_keys[depth]

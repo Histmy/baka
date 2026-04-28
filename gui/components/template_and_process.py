@@ -18,11 +18,17 @@ class TemplateAndProcess:
         self._state = state
 
         self._template_label = ft.Text(
-            "No template selected",
+            state.template.get() or "No template selected",
             size=12,
             color=ft.Colors.GREY_600,
             overflow=ft.TextOverflow.ELLIPSIS,
         )
+
+        state.template.register_listener(self._change_template_label)
+
+    def _change_template_label(self, value: str | None):
+        self._template_label.value = value or "No template selected"
+        self._template_label.update()
 
     # ── public widget ─────────────────────────────────────────────────────────
 
@@ -66,14 +72,15 @@ class TemplateAndProcess:
 
         if files:
             path = files[0].path
-            self._state.template = path
-            self._template_label.value = path or ""
+            self._state.template.set(path)
             self._page.update()
 
     # ── process ───────────────────────────────────────────────────────────────
 
     async def _process(self):
-        if not self._state.template:
+        template = self._state.template.get()
+
+        if not template:
             self._snack("No template selected!", error=True)
             return
         file = await ft.FilePicker().save_file(
@@ -85,18 +92,17 @@ class TemplateAndProcess:
         if not file:
             return
 
-        template = self._state.template
-
         try:
             conf = self._generate_shared_config()
-            conf_path = Path(self._state.dir) / "shared_config.toml"
+            path = Path(self._state.dir)
+            conf_path = path / "shared_config.toml"
             with open(conf_path, "wb") as f:
                 tomli_w.dump(conf, f)
 
-            output_base = Path(self._state.dir) / "output"
+            output_base = path / "output"
 
             for graph in self._state.graphs:
-                graph_path = Path(self._state.dir) / "graphs" / (graph.id + ".toml")
+                graph_path = path / "graphs" / (graph.id + ".toml")
                 make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
 
             doc = docx.Document(template)
@@ -119,7 +125,7 @@ class TemplateAndProcess:
                 content = tomllib.load(f)
             tables[table.name] = content["table"]
             tables[table.name]["workbook"] = table.workbook.name if table.workbook else ""
-            filters[table.name] = content["filters"]
+            filters[table.name] = content["filter"]
 
         return {"workbooks": workbooks, "tables": tables, "filters": filters}
 

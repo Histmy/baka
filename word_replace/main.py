@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import re
+from pathlib import Path
 
 import docx.document
 from docx.oxml import OxmlElement

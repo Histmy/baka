@@ -1,19 +1,8 @@
 import flet as ft
 
-from gui.app_state import AppState, ObservableList
-from gui.components import right_side
-from gui.components.left_side import LeftSide
-from gui.components.toolbar import Toolbar
-
-
-def build_state() -> AppState:
-    return AppState(
-        workbooks=ObservableList([]),
-        tables=ObservableList([]),
-        graphs=ObservableList([]),
-        template=None,
-        dir="/hopefully/does/not/exist",
-    )
+from gui.app_state import AppState
+import gui.windows.main as main_window
+from gui.windows.welcome import WelcomeWindow
 
 
 def main(page: ft.Page):
@@ -25,28 +14,15 @@ def main(page: ft.Page):
     page.window.min_height = 500
     page.padding = 0
 
-    state = build_state()
+    welcome = WelcomeWindow(page, lambda appstate, page=page: load_main_window(page, appstate))
+    page.add(welcome.build())
 
-    # ── Toolbar (AppBar) ─────────────────────────────────────────────────────
-    toolbar = Toolbar(page, state)
-    page.appbar = toolbar.build()
+    page.update()
 
-    # ── Layout: left drawer + right content ──────────────────────────────────
-    left = LeftSide(page, state)
-    right = right_side.build(page, state)
 
-    page.add(
-        ft.Row(
-            [
-                left.build(),
-                ft.VerticalDivider(width=1),
-                right,
-            ],
-            expand=True,
-            spacing=0,
-        )
-    )
-
+def load_main_window(page: ft.Page, appstate: AppState):
+    page.controls.clear()
+    page.add(main_window.build(page, appstate))
     page.update()
 
 

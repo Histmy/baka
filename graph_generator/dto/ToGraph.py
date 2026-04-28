@@ -5,6 +5,12 @@ import numpy.typing as npt
 
 
 @dataclass
+class Label:
+    name: str
+    values: list[str]
+
+
+@dataclass
 class ToGraph:
-    labels: list[list[str]]
+    labels: list[Label]
     data: npt.NDArray[np.float32]

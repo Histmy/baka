@@ -3,6 +3,7 @@ from pathlib import Path
 import flet as ft
 
 from gui import app_state
+from gui.components.dialogs.rename_graph import RenameGraph
 
 
 class GraphSelect:
@@ -41,6 +42,13 @@ class GraphSelect:
                                 bgcolor=ft.Colors.BLUE_GREY_800,
                                 color=ft.Colors.WHITE,
                                 on_click=self._edit,
+                            ),
+                            ft.ElevatedButton(
+                                "Rename",
+                                icon=ft.Icons.DRIVE_FILE_RENAME_OUTLINE,
+                                bgcolor=ft.Colors.BLUE_GREY_800,
+                                color=ft.Colors.WHITE,
+                                on_click=self._rename,
                             ),
                             ft.OutlinedButton(
                                 "Delete",
@@ -115,6 +123,14 @@ class GraphSelect:
             app_state.open_file(str(path))
         except Exception as exc:
             self._snack(f"Could not open graph file: {exc}")
+
+    def _rename(self):
+        selected = self._state.selected_graph.get()
+        if not selected:
+            self._snack("No graph selected!")
+            return
+
+        RenameGraph(self._page, selected)
 
     def _snack(self, msg: str):
         self._page.overlay.append(ft.SnackBar(ft.Text(msg), open=True))

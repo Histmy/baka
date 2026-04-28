@@ -119,21 +119,48 @@ class ObservableList(list[T], Generic[T]):
         self._listeners.append(callback)
 
 
-@dataclass
+class ObservableOptionalString:
+    def __init__(self, value: str | None):
+        self._value = value
+        self._listeners = []
+
+    def set(self, value: str | None):
+        self._value = value
+        self._notify()
+
+    def get(self) -> str | None:
+        return self._value
+
+    def _notify(self):
+        for callback in self._listeners:
+            callback(self._value)
+
+    def register_listener(self, callback):
+        self._listeners.append(callback)
+
+
 class AppState:
     workbooks: ObservableList[Workbook]
     tables: ObservableList[Table]
     graphs: ObservableList[Graph]
-    template: Optional[str]
+    template = ObservableOptionalString(None)
     dir: str
 
-    selected_graph: SelectedGraph = SelectedGraph()
+    selected_graph = SelectedGraph()
+
+    def __init__(self, dir: str):
+        self.workbooks = ObservableList()
+        self.tables = ObservableList()
+        self.graphs = ObservableList()
+        self.template = ObservableOptionalString(None)
+        self.dir = dir
+        self.selected_graph = SelectedGraph()
 
     def reset(self, dir: str):
         self.workbooks.clear()
         self.tables.clear()
         self.graphs.clear()
-        self.template = None
+        self.template = ObservableOptionalString(None)
         self.dir = dir
         self.selected_graph.set(None)
 
@@ -145,7 +172,7 @@ class AppState:
             "workbooks": [asdict(workbook) for workbook in self.workbooks],
             "tables": [{"id": table.id, "name": table.name, "workbook": table.workbook.id if table.workbook else ""} for table in self.tables],
             "graphs": [{"id": graph.id, "name": graph.name, "tables": [table.id for table in graph.tables]} for graph in self.graphs],
-            "template": self.template if self.template else "",
+            "template": self.template.get() or "",
         }
 
         with open(Path(self.dir) / "config.toml", "wb") as f:
@@ -168,5 +195,5 @@ class AppState:
             tables = [t for t in self.tables if t.id in graph["tables"]]
             self.graphs.append(Graph(id=graph["id"], name=graph["name"], tables=tables))
 
-        self.template = data.get("template", None)
+        self.template.set(data.get("template", None))
         self.dir = path
