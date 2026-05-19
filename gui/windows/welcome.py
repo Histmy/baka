@@ -1,8 +1,9 @@
+from collections.abc import Callable
+from pathlib import Path
+
 import flet as ft
 
 from gui.app_state import AppState
-from pathlib import Path
-from collections.abc import Callable
 
 
 class WelcomeWindow:
@@ -62,6 +63,10 @@ class WelcomeWindow:
     async def _open_existing_project(self):
         path = await ft.FilePicker().get_directory_path(dialog_title="Select Directory of Existing Project")
         if not path:
+            return
+
+        if not (Path(path) / "config.toml").exists():
+            self._error("Selected directory does not contain a valid project (missing app_state.toml)!")
             return
 
         try:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import flet as ft
 
@@ -7,6 +7,7 @@ from gui import app_state
 from gui.components.dialogs.edit_table import EditTableDialog
 from gui.components.dialogs.edit_workbook import EditWorkbookDialog
 from gui.components.tree import Tree
+from gui.util.resource_path import resource_path
 
 
 class LeftSide:
@@ -18,7 +19,7 @@ class LeftSide:
     def __init__(self, page: ft.Page, state: app_state.AppState):
         self._page = page
         self._state = state
-        self._selected_type: Optional[str] = None  # "workbook" | "table" | None
+        self._selected_type: Optional[Literal["workbook", "table"]] = None
         self._selected_id: Optional[str] = None
         self._ticked_table_ids: set[str] = set()
 
@@ -138,9 +139,10 @@ class LeftSide:
         table = app_state.Table.new(name=f"New Table {n}", workbook=workbook)
         self._state.tables.append(table)
 
-        # create stub TOML
-        path = Path(self._state.dir) / "tables" / (table.id + ".toml")
-        path.write_text("[table]\n\n[filters]")
+        # create TOML with hints
+        toml_path = Path(self._state.dir) / "tables" / (table.id + ".toml")
+        template_path = resource_path(Path("gui") / "toml_templates" / "table.toml")
+        toml_path.write_text(template_path.read_text())
 
     def _edit(self):
         if not self._selected_id:

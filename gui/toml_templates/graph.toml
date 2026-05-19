@@ -1,0 +1,26 @@
+#
+# The line above is automatically updated based on what tables get checked.
+# If it gets modified by hand, it will be overwritten on the next edit.
+
+# If you want to use any example, just remove the comment character (#).
+
+# If you want to override or add any filter to any of the selected tables, specify them in the section similar to the one in table deffinition:
+#[filters.table_name]
+# Here you can specify the same stuff as in the table filter section.
+
+[graph]
+# Here specify the type of graph and the data to use.
+
+# Some things apply to all graphs
+
+#width = 8 # The width of the graph in inches, default is 6
+#height = 6 # The height of the graph in inches, default is 4
+title = "Example graph" # The title of the graph
+
+# Many things depend on the type, just uncomment one that you want.
+#type = "bar"
+#type = "line"
+#type = "pie"
+#type = "spider"
+#type = "box"
+#type = "histogram"

@@ -76,7 +76,7 @@ class Tree(ft.Column):
         row = ft.GestureDetector(
             on_tap=lambda _, t=table: self._select_table(t.id),
             content=ft.Container(
-                padding=ft.padding.only(left=24, top=2, bottom=2, right=8),
+                padding=ft.Padding(left=24, top=2, bottom=2, right=8),
                 bgcolor=ft.Colors.BLUE_200 if selected_id == table.id else None,
                 border_radius=4,
                 content=ft.Row(

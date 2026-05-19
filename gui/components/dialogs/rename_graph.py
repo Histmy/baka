@@ -1,3 +1,5 @@
+from typing import Callable
+
 import flet as ft
 
 from gui.app_state import Graph
@@ -6,9 +8,10 @@ from gui.app_state import Graph
 class RenameGraph:
     """Modal dialog for renaming a graph."""
 
-    def __init__(self, page: ft.Page, graph: Graph):
+    def __init__(self, page: ft.Page, graph: Graph, redraw_callback: Callable[[str], None]):
         self._page = page
         self._graph = graph
+        self._redraw_callback = redraw_callback
 
         self._name_field = ft.TextField(
             label="Name",
@@ -48,4 +51,6 @@ class RenameGraph:
 
     def _close(self):
         self._dialog.open = False
+
         self._page.update()
+        self._redraw_callback(self._graph.name)

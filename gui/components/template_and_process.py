@@ -1,4 +1,3 @@
-import tomllib
 from pathlib import Path
 
 import docx
@@ -7,6 +6,7 @@ import tomli_w
 
 from graph_generator.main import make_split
 from gui import app_state
+from gui.util.shared_config import generate_shared_config
 from word_replace.main import replace_placeholder_with_figure
 
 
@@ -93,41 +93,36 @@ class TemplateAndProcess:
             return
 
         try:
-            conf = self._generate_shared_config()
+            conf = generate_shared_config(self._state)
             path = Path(self._state.dir)
             conf_path = path / "shared_config.toml"
             with open(conf_path, "wb") as f:
                 tomli_w.dump(conf, f)
+        except Exception as exc:
+            self._dialog("Error", ft.Text(f"Failed to generate config: {exc}"))
+            return
 
+        try:
             output_base = path / "output"
 
             for graph in self._state.graphs:
                 graph_path = path / "graphs" / (graph.id + ".toml")
                 make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
+        except Exception as exc:
+            self._dialog("Error", ft.Text(f"Graph generation failed: {exc}"))
+            return
 
+        try:
             doc = docx.Document(template)
             replace_placeholder_with_figure(doc, output_base, "Figure", "Figure", "This is a sample figure.")
             doc.save(file)
-
-            self._snack(f"Saved to {file}")
         except Exception as exc:
-            self._snack(f"Processing failed: {exc}", error=True)
+            self._dialog("Error", ft.Text(f"Failed to generate document: {exc}"))
+            return
+
+        self._snack(f"Successfully saved to {file}")
 
     # ── helpers ───────────────────────────────────────────────────────────────
-
-    def _generate_shared_config(self) -> dict:
-        tables: dict = {}
-        filters: dict = {}
-        workbooks = {wb.name: {"path": wb.path} for wb in self._state.workbooks}
-
-        for table in self._state.tables:
-            with open(Path(self._state.dir) / "tables" / (table.id + ".toml"), "rb") as f:
-                content = tomllib.load(f)
-            tables[table.name] = content["table"]
-            tables[table.name]["workbook"] = table.workbook.name if table.workbook else ""
-            filters[table.name] = content["filter"]
-
-        return {"workbooks": workbooks, "tables": tables, "filters": filters}
 
     def _snack(self, msg: str, *, error: bool = False):
         self._page.overlay.append(
@@ -137,4 +132,16 @@ class TemplateAndProcess:
                 open=True,
             )
         )
+        self._page.update()
+
+    def _dialog(self, title: str, content: ft.Control):
+        def close():
+            dialog.open = False
+            self._page.update()
+
+        dialog = ft.AlertDialog(title=ft.Text(title), content=content, actions=[ft.ElevatedButton("Close", on_click=lambda _: close())])
+
+        self._page.overlay.append(dialog)
+
+        dialog.open = True
         self._page.update()

@@ -1,4 +1,5 @@
-flet
+attrs
+flet==0.84
 matplotlib
 numpy
 openpyxl

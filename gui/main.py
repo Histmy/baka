@@ -1,7 +1,7 @@
 import flet as ft
 
-from gui.app_state import AppState
 import gui.windows.main as main_window
+from gui.app_state import AppState
 from gui.windows.welcome import WelcomeWindow
 
 

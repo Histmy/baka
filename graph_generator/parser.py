@@ -96,19 +96,18 @@ def load_simple_config(file_path: str):
 
     parsed_tables: dict[str, ParsedTable] = {}
     for table_name, table in tables.items():
-        row_header = table.row_header if isinstance(table.row_header, dict) else {"default": table.row_header}
         parsed_tables[table_name] = ParsedTable(
             source_file=lookup_workbook(table.source_file, table.workbook, data.workbooks or {}),
             sheet=table.sheet,
-            column_header=table.column_header if isinstance(table.column_header, dict) else {"default": table.column_header},
-            row_header={key: excel_col_to_num(value) for key, value in row_header.items()},
+            column_header=table.column_header,
+            row_header={key: excel_col_to_num(value) for key, value in table.row_header.items()},
         )
 
     parsed_filters: dict[str, ParsedFilter] = {}
     for filter_name, filter in filters.items():
         parsed_filters[filter_name] = ParsedFilter(
-            row=filter.row if isinstance(filter.row, dict) else {"default": filter.row} if filter.row else None,
-            column=filter.column if isinstance(filter.column, dict) else {"default": filter.column} if filter.column else None,
+            row=filter.row,
+            column=filter.column,
         )
 
     verify_filters(parsed_tables, parsed_filters)
@@ -160,13 +159,11 @@ def load_split_config(tables_file: str, graph_file: str):
 
         av = available_tables[table]
 
-        row_header = av.row_header if isinstance(av.row_header, dict) else {"default": av.row_header}
-
         tables[table] = ParsedTable(
             source_file=lookup_workbook(av.source_file, av.workbook, tables_data.workbooks or {}),
             sheet=av.sheet,
-            column_header=av.column_header if isinstance(av.column_header, dict) else {"default": av.column_header},
-            row_header={key: excel_col_to_num(value) for key, value in row_header.items()},
+            column_header=av.column_header,
+            row_header={key: excel_col_to_num(value) for key, value in av.row_header.items()},
         )
 
     # Load filters from both configurations and merge them, giving precedence to filter that apply only to the current graph
@@ -176,8 +173,8 @@ def load_split_config(tables_file: str, graph_file: str):
     for key, value in (*a.items(), *b.items()):
         if key not in filters:
             filters[key] = ParsedFilter(
-                row=value.row if isinstance(value.row, dict) else {"default": value.row} if value.row else None,
-                column=value.column if isinstance(value.column, dict) else {"default": value.column} if value.column else None,
+                row=value.row,
+                column=value.column,
             )
         else:
             for attr in ["row", "column"]:

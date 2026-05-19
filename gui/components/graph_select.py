@@ -4,6 +4,7 @@ import flet as ft
 
 from gui import app_state
 from gui.components.dialogs.rename_graph import RenameGraph
+from gui.util.resource_path import resource_path
 
 
 class GraphSelect:
@@ -84,8 +85,9 @@ class GraphSelect:
         graph = app_state.Graph.new(name=f"New Graph {n}", tables=[])
         self._state.graphs.append(graph)
 
-        path = Path(self._state.dir) / "graphs" / (graph.id + ".toml")
-        path.write_text("\n\n\n[graph]\n")
+        toml_path = Path(self._state.dir) / "graphs" / (graph.id + ".toml")
+        template_path = resource_path(Path("gui") / "toml_templates" / "graph.toml")
+        toml_path.write_text(template_path.read_text())
 
         self._state.selected_graph.set(graph)
         self._dropdown.value = graph.name
@@ -130,7 +132,12 @@ class GraphSelect:
             self._snack("No graph selected!")
             return
 
-        RenameGraph(self._page, selected)
+        RenameGraph(self._page, selected, self._after_raneme)
+
+    def _after_raneme(self, new_name: str):
+        self._redraw()
+        self._dropdown.value = new_name
+        self._page.update()
 
     def _snack(self, msg: str):
         self._page.overlay.append(ft.SnackBar(ft.Text(msg), open=True))

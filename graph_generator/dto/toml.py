@@ -7,13 +7,13 @@ class Table(BaseModel):
     source_file: Optional[str] = None
     workbook: Optional[str] = None
     sheet: str
-    column_header: dict[str, int] | int
-    row_header: dict[str, str] | str
+    column_header: dict[str, int]
+    row_header: dict[str, str]
 
 
 class Filter(BaseModel):
-    row: Optional[dict[str, list[str]] | list[str]] = None
-    column: Optional[dict[str, list[str]] | list[str]] = None
+    row: Optional[dict[str, list[str]]] = None
+    column: Optional[dict[str, list[str]]] = None
 
 
 class Graph(BaseModel):

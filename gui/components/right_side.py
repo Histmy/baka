@@ -1,8 +1,8 @@
 import flet as ft
 
 from gui.app_state import AppState
-from gui.components.template_and_process import TemplateAndProcess
 from gui.components.graph_select import GraphSelect
+from gui.components.template_and_process import TemplateAndProcess
 
 
 def build(page: ft.Page, state: AppState) -> ft.Column:

@@ -65,12 +65,10 @@ def craft_table_info(sheet: Worksheet, table: ParsedTable) -> TableInfo:
     ordered_row_labels = sorted(table.row_header.keys(), key=lambda item: table.row_header[item])
 
     # find top row of data
-    last_column_header = table.column_header[ordered_column_labels[-1]]
-    top = last_column_header + 1
+    top = table.column_header[ordered_column_labels[-1]]
 
     # find left column of data
-    last_row_header = table.row_header[ordered_row_labels[-1]]
-    left = last_row_header + 1
+    left = table.row_header[ordered_row_labels[-1]]
 
     # check for last row
     last_row = top
@@ -83,8 +81,8 @@ def craft_table_info(sheet: Worksheet, table: ParsedTable) -> TableInfo:
         last_column += 1
 
     return TableInfo(
-        column_labels=ColumnLabels(Bounds(left, last_column), table.column_header, ordered_column_labels),
-        row_labels=RowLabels(Bounds(top, last_row), table.row_header, ordered_row_labels),
+        column_labels=ColumnLabels(Bounds(left + 1, last_column), table.column_header, ordered_column_labels),
+        row_labels=RowLabels(Bounds(top + 1, last_row), table.row_header, ordered_row_labels),
     )
 
 
@@ -149,7 +147,7 @@ def complete_info(what: dict[str, list[str]] | None, sorted_keys: list[str], loa
 
 
 def load_data(table: ParsedTable, filter: ParsedFilter) -> ToGraph:
-    book = openpyxl.load_workbook(filename=table.source_file)
+    book = openpyxl.load_workbook(filename=table.source_file, data_only=True)
     sheet_num = book.sheetnames.index(table.sheet)
 
     if sheet_num == -1:
