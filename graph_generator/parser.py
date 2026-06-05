@@ -112,7 +112,7 @@ def load_simple_config(file_path: str):
 
     verify_filters(parsed_tables, parsed_filters)
 
-    post_processing = data.post_processing if data.post_processing is not None else {}
+    post_processing = data.post_processing
 
     graph_config = load_graph_config(data)
 
@@ -184,7 +184,7 @@ def load_split_config(tables_file: str, graph_file: str):
     # Check if each table has a corresponding filter and vice versa
     verify_filters(tables, filters, False)
 
-    post_processing = graph_data.post_processing if graph_data.post_processing is not None else {}
+    post_processing = graph_data.post_processing
 
     graph_config = load_graph_config(graph_data)
 

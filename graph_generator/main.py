@@ -1,9 +1,10 @@
 from pathlib import Path
+from typing import Optional
 
 import matplotlib.pyplot as plt
 
 from graph_generator.dto.ToGraph import ToGraph
-from graph_generator.dto.toml import Graph
+from graph_generator.dto.toml import Graph, PostProcessing
 from graph_generator.graphs.bar import make_bar_chart
 from graph_generator.graphs.box import make_box_chart
 from graph_generator.graphs.histogram import make_histogram_chart
@@ -12,24 +13,84 @@ from graph_generator.graphs.pie import make_pie_chart
 from graph_generator.graphs.spider import make_spider_chart
 from graph_generator.loader import load_data
 from graph_generator.parser import ParsedFilter, ParsedTable, load_simple_config, load_split_config
-from graph_generator.post_process import collapse
+from graph_generator.post_process import PostProcess
 
 
-def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], post_processing: dict, graph_config: Graph, path: Path) -> None:
-    all: list[ToGraph] = []
+def combine(graphs: dict[str, ToGraph], post_processing: PostProcessing) -> ToGraph:
+    """
+    Combines multiple data collections into one by applying the specified post-processing operation.
+    Assumes `graphs` contains at least two data collections.
+    """
+    if post_processing.join_type is None:
+        raise ValueError("Join_type must be specified for processing multiple tables.")
+
+    match post_processing.join_type:
+        case "sum":
+            graphs_list = list(graphs.values())
+            for i in range(1, len(graphs_list)):
+                PostProcess.sum(graphs_list[0], graphs_list[i])
+            return graphs_list[0]
+        case "ratio":
+            if len(graphs) != 2:
+                raise ValueError("Ratio join_type requires exactly two tables.")
+
+            first, second = post_processing.ratio_first, post_processing.ratio_second
+            if first is None or second is None:
+                raise ValueError("Ratio join_type requires ratio_first and ratio_second to have specified the names of tables to be divided.")
+
+            if first not in graphs or second not in graphs:
+                raise ValueError(f"Specified tables for ratio not found in graphs: {first}, {second}")
+
+            PostProcess.divide(graphs[first], graphs[second])
+            return graphs[first]
+        case "merge":
+            if post_processing.merge_serie is None:
+                raise ValueError("Merge join_type requires merge_serie to specify the name of the series to merge by.")
+
+            begined = False
+            last_to_graph: Optional[ToGraph] = None
+            last_name: Optional[str] = None
+            for name, graph in graphs.items():
+                if last_to_graph is None:
+                    last_to_graph = graph
+                    last_name = name
+                    continue
+
+                # in second iteration we can mark the first collection
+                if not begined:
+                    PostProcess.merge(last_to_graph, graph, post_processing.merge_serie, lambda x: f"({last_name}) {x}", lambda x: f"({name}) {x}")
+                    begined = True
+                else:
+                    PostProcess.merge(last_to_graph, graph, post_processing.merge_serie, lambda x: x, lambda x: f"({name}) {x}")
+
+            if last_to_graph is not None:
+                return last_to_graph
+            else:
+                raise ValueError("No graphs to merge.")
+        case _:
+            raise ValueError(f"Unsupported join_type: {post_processing.join_type}")
+
+
+def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], post_processing: Optional[PostProcessing], graph_config: Graph, path: Path) -> None:
+    all: dict[str, ToGraph] = {}
 
     if len(tables) == 0:
         raise ValueError("No tables specified in the configuration.")
 
     for table_name in tables:
-        output = load_data(tables[table_name], filters[table_name])
+        output = load_data(tables[table_name], filters[table_name] if table_name in filters else ParsedFilter(row=None, column=None))
 
-        processed = collapse(output)
-        # processed = simple_transpose(processed)
-        all.append(processed)
+        processed = PostProcess.collapse(output)
+        # processed = PostProcess.simple_transpose(processed)
+        all[table_name] = processed
 
-    # TODO: combine
-    processed = all[0]
+    if len(all) == 1:
+        processed = next(iter(all.values()))
+    else:
+        if post_processing is None:
+            raise ValueError("Post-processing must be provided when multiple tables are selected.")
+
+        processed = combine(all, post_processing)
 
     match graph_config.type.lower():
         case "bar":
@@ -52,11 +113,14 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
 
 
 def make_simple(config_file: str, output_path: Path) -> None:
-    generate(*load_simple_config(config_file), output_path)
+    # I know about the unpack operator, but Mypy doesn't like it
+    tables, filters, post_processing, graph_config = load_simple_config(config_file)
+    generate(tables, filters, post_processing, graph_config, output_path)
 
 
 def make_split(tables_file: str, graph_file: str, output_path: Path) -> None:
-    generate(*load_split_config(tables_file, graph_file), output_path)
+    tables, filters, post_processing, graph_config = load_split_config(tables_file, graph_file)
+    generate(tables, filters, post_processing, graph_config, output_path)
 
 
 # When started from command line

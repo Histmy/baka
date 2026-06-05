@@ -1,5 +1,6 @@
 import tomllib
 from pathlib import Path
+from typing import Optional
 
 from pydantic import BaseModel, ValidationError
 
@@ -8,7 +9,7 @@ from gui import app_state
 
 class TableContent(BaseModel):
     table: dict
-    filter: dict
+    filter: Optional[dict] = None
 
 
 def generate_shared_config(state: app_state.AppState) -> dict:
@@ -39,6 +40,7 @@ def generate_shared_config(state: app_state.AppState) -> dict:
 
         tables[table.name] = table_content.table
         tables[table.name]["workbook"] = table.workbook.name if table.workbook else ""
-        filters[table.name] = table_content.filter
+        if table_content.filter is not None:
+            filters[table.name] = table_content.filter
 
     return {"workbooks": workbooks, "tables": tables, "filters": filters}

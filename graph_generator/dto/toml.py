@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -30,6 +30,13 @@ class Workbook(BaseModel):
     path: str
 
 
+class PostProcessing(BaseModel):
+    join_type: Optional[Literal["sum", "ratio", "merge"]] = None
+    ratio_first: Optional[str] = None
+    ratio_second: Optional[str] = None
+    merge_serie: Optional[str] = None
+
+
 class Config(BaseModel):
     workbooks: Optional[dict[str, Workbook]] = None
     table: Optional[Table] = None
@@ -37,5 +44,5 @@ class Config(BaseModel):
     include_tables: Optional[list[str]] = None
     filter: Optional[Filter] = None
     filters: Optional[dict[str, Filter]] = None
-    post_processing: Optional[dict] = None
+    post_processing: Optional[PostProcessing] = None
     graph: Optional[Graph] = None
