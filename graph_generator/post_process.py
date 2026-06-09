@@ -109,3 +109,18 @@ class PostProcess:
             new_data[tuple(index_dest)] = data_two.data[tuple(index_src)]
 
         data_one.data = new_data
+
+    @staticmethod
+    def reverse(data: ToGraph, series: list[str]) -> None:
+        """
+        Reverses the order of values in the specified series.
+        """
+
+        for serie in series:
+            serie_index = next((i for i, label in enumerate(data.labels) if label.name == serie), None)
+
+            if serie_index is None:
+                raise ValueError(f"Serie '{serie}' not found in data")
+
+            data.labels[serie_index].values.reverse()
+            data.data = np.flip(data.data, axis=serie_index)

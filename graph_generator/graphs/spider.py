@@ -10,12 +10,12 @@ from graph_generator.dto.toml import Graph
 
 def make_spider_chart(data: ToGraph, config: Graph) -> None:
     _, ax = plt.subplots(figsize=(config.width, config.height), subplot_kw={"polar": True})
-    ax = cast(PolarAxes, ax)  # type hint for IDE
+    ax = cast(PolarAxes, ax)  # type hint for MyPy
 
-    angles = np.linspace(0, 2 * np.pi, len(data.labels[0]), endpoint=False)
+    angles = np.linspace(0, 2 * np.pi, len(data.labels[0].values), endpoint=False)
     angles = np.concatenate((angles, [angles[0]]))  # Close the plot
 
-    ax.set_thetagrids(angles[:-1] * 180 / np.pi, data.labels[0])
+    ax.set_thetagrids(angles[:-1] * 180 / np.pi, data.labels[0].values)
 
     match len(data.labels):
         case 1:
@@ -39,7 +39,7 @@ def make_one_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph)
 
 
 def make_two_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph):
-    for series_name, values in zip(data.labels[1], data.data.T):
+    for series_name, values in zip(data.labels[1].values, data.data.T):
         values = np.concatenate((values, [values[0]]))  # Close the plot
         ax.plot(angles, values, marker="o", label=series_name)
         ax.fill(angles, values, alpha=0.25)

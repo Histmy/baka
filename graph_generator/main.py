@@ -92,22 +92,38 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
 
         processed = combine(all, post_processing)
 
+    if post_processing is not None and post_processing.reverse is not None:
+        if isinstance(post_processing.reverse, str):
+            post_processing.reverse = [post_processing.reverse]
+
+        PostProcess.reverse(processed, post_processing.reverse)
+
     match graph_config.type.lower():
         case "bar":
             make_bar_chart(processed, graph_config)
         case "line":
             make_line_chart(processed, graph_config)
         case "pie":
-            make_pie_chart(processed)
+            make_pie_chart(processed, graph_config)
         case "spider":
             make_spider_chart(processed, graph_config)
         case "box":
-            make_box_chart(processed)
+            make_box_chart(processed, graph_config)
         case "histogram":
-            make_histogram_chart(processed)
+            make_histogram_chart(processed, graph_config)
         case _:
             raise ValueError(f"Unsupported graph type: {graph_config.type}")
 
+    if graph_config.legend_visibility is not None:
+        if graph_config.legend_visibility:
+            plt.legend(loc=graph_config.legend_position if graph_config.legend_position is not None else "best")
+        else:
+            plt.legend().set_visible(False)
+
+    plt.gcf().set_size_inches(graph_config.width, graph_config.height)
+
+    if graph_config.title is not None:
+        plt.title(graph_config.title)
     plt.savefig(path, format="png", dpi=300)
     plt.close()
 

@@ -1,5 +1,5 @@
 #
-# The line above is automatically updated based on what tables get checked.
+# The line above is automatically updated based on what tables are selected in the GUI.
 # If it gets modified by hand, it will be overwritten on the next edit.
 
 # If you want to use any example, just remove the comment character (#).
@@ -9,13 +9,19 @@
 # Here you can specify the same stuff as in the table filter section.
 
 [graph]
-# Here specify the type of graph and the data to use.
+# Here specify the type of graph and other settings affecting the visualization.
+# Everything, except the type, is optional and has some default value.
 
-# Some things apply to all graphs
+# Some options apply to all graphs
 
-#width = 8 # The width of the graph in inches, default is 6
-#height = 6 # The height of the graph in inches, default is 4
-title = "Example graph" # The title of the graph
+#width = 12 # The width of the graph in inches, default is 10
+#height = 8 # The height of the graph in inches, default is 6
+#title = "Example graph" # The title that appears on top of the graph, default empty
+#color_palette = ["blue", "orange", "green"] # It is possible to specify the colors in words like this, but there are not many and they don't look good
+#color_palette = ["#1f77b4", "#ff7f0e", "#2ca02c"] # It is better to specify the colors in hex, you can use any hex code (online tools can help with picking)
+#legend_visibility = false # Whether to show the legend, default is true, if there are more than one series
+#legend_position = "upper right" # The position of the legend, default is automatic, other options are: upper left, lower left, lower right, right, center left, center right, lower center, upper center, center
+
 
 # Many things depend on the type, just uncomment one that you want.
 #type = "bar"
@@ -24,3 +30,28 @@ title = "Example graph" # The title of the graph
 #type = "spider"
 #type = "box"
 #type = "histogram"
+
+# Unless the selected data is a single series, you need to specify where should which column or row header be used.
+# Since the most dimensions the generator can generate is 3, there are three levels: x_axis, color and style
+# The names are derived mostly from line plot, because you first specify what series goes along the x axis, then the different series
+# is distinguished by some color and the last dimension is line style. These names apply to all graph types, just specify them in the right order.
+
+# In a bar graph, the x axis is the different bars and the color is the different groups of bars. There is no style for bar graph.
+# In pie graph, the x axis is the different slices and there is no color or style.
+# In spider graph, the x axis is the different axes and the color is the different series
+# In box graph, the x axis is the different boxes and there is no color or style.
+# Histogram doesn't allow any of these dimensions, since it is just a single series.
+
+# For example, if you want to make a line graph with years on x axis, countries by color and style of the line to indicate the type of data:
+#x_axis = "year"
+#color = "country"
+#style = "type"
+# (assuming that the data has columns named year, country and type)
+
+# The following options are specific to bar, line, box and histogram graphs
+#x_axis_label = "Year" # The label of the x axis, default empty
+#y_axis_label = "Value" # The label of the y axis, default empty
+#x_ticks_rotation = 45 # The rotation of the x axis ticks in degrees counterclockwise, default is 0
+#highlight = 100 # A horizontal line will be drawn at this value, default is no line
+#min = 0 # The minimum value where the y axis will start, default is automatically determined
+#max = 200 # The maximum value where the y axis will end, default is automatically determined
