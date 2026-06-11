@@ -32,6 +32,9 @@ def make_line_chart(data: ToGraph, config: Graph) -> None:
 def make_one_dimensional_chart(data: ToGraph, config: Graph):
     df = transform_two_axes(data)
 
+    if config.x_axis is None:
+        raise ValueError("x_axis must be specified for one-dimensional line chart.")
+
     if config.color_palette is not None:
         sns.set_palette(config.color_palette, n_colors=len(df[config.x_axis].unique()))
 
@@ -41,6 +44,9 @@ def make_one_dimensional_chart(data: ToGraph, config: Graph):
 def make_two_dimensional_chart(data: ToGraph, config: Graph):
     df = transform_three_axes(data)
 
+    if config.x_axis is None or config.color is None:
+        raise ValueError("x_axis and color must be specified for two-dimensional line chart.")
+
     if config.color_palette is not None:
         sns.set_palette(config.color_palette, n_colors=len(df[config.color].unique()))
 
@@ -49,6 +55,9 @@ def make_two_dimensional_chart(data: ToGraph, config: Graph):
 
 def make_three_dimensional_chart(data: ToGraph, config: Graph):
     df = transform_four_axes(data)
+
+    if config.x_axis is None or config.color is None or config.style is None:
+        raise ValueError("x_axis, color and style must be specified for three-dimensional line chart.")
 
     if config.color_palette is not None:
         sns.set_palette(config.color_palette, n_colors=len(df[config.color].unique()))

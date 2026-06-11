@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from tomllib import load
 from typing import Optional
 
+from pydantic import ValidationError
+
 from graph_generator.dto.toml import Config, Filter, Workbook
 
 
@@ -35,7 +37,29 @@ def load_toml_file(file_path: str):
     with open(file_path, "rb") as file:
         raw = load(file)
 
-    return Config.model_validate(raw)
+    try:
+        return Config.model_validate(raw)
+    except ValidationError as e:
+        errs = e.errors()
+
+        if len(errs) == 0:
+            raise ValueError("Unknown error during TOML parsing.")
+
+        all = []
+
+        for err in errs:
+            if err["type"] == "missing":
+                all.append(f"Missing required key: {err['loc'][0]}")
+            elif err["type"] == "string_type":
+                loc = ".".join(str(x) for x in err["loc"])
+                all.append(f"Expected a string for key {loc}.")
+            elif err["type"] == "float_parsing":
+                loc = ".".join(str(x) for x in err["loc"])
+                all.append(f"Expected a float for key {loc}.")
+            else:
+                all.append(f"Error for key {err['loc'][0]}: {err['msg']}")
+
+        raise ValueError("Errors during TOML parsing:\n" + "\n".join(all))
 
 
 def load_tables(config: Config):
@@ -83,9 +107,7 @@ def verify_filters(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilt
             raise ValueError(f"Filter for table '{table_name}' contains undefined row headers: {set(filter.row.keys()) - set(table.row_header.keys())}")
 
         if filter.column and not filter.column.keys() <= table.column_header.keys():
-            raise ValueError(
-                f"Filter for table '{table_name}' contains undefined column headers: {set(filter.column.keys()) - set(table.column_header.keys())}"
-            )
+            raise ValueError(f"Filter for table '{table_name}' contains undefined column headers: {set(filter.column.keys()) - set(table.column_header.keys())}")
 
 
 def load_simple_config(file_path: str):

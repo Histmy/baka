@@ -37,10 +37,10 @@
 # is distinguished by some color and the last dimension is line style. These names apply to all graph types, just specify them in the right order.
 
 # In a bar graph, the x axis is the different bars and the color is the different groups of bars. There is no style for bar graph.
-# In pie graph, the x axis is the different slices and there is no color or style.
-# In spider graph, the x axis is the different axes and the color is the different series
+# In pie graph is only one series, nothing is necessary
+# In spider graph, the x axis is the different axes and the color are the different lines
 # In box graph, the x axis is the different boxes and there is no color or style.
-# Histogram doesn't allow any of these dimensions, since it is just a single series.
+# Histogram is only one series, nothing is necessary
 
 # For example, if you want to make a line graph with years on x axis, countries by color and style of the line to indicate the type of data:
 #x_axis = "year"

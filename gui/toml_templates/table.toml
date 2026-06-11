@@ -4,7 +4,7 @@
 # Here specify in what sheet is this table located, and the individual headers.
 
 # To specify the sheet:
-#sheet = "Sheet1"
+sheet = "Sheet1"
 
 # To specify the headers, example:
 #row_header.name = "A"
@@ -20,12 +20,8 @@
 
 # Filtering is done on each header, by specifying the values to include
 
-# Example, assuming in the table section there is "row_header="A"" and in that header are for example years:
-#row = ["2020", "2021"]
 # If there are multiple headers of the same direction (e.g. "row_header.year" and "row_header.month"), you can specify the filters for each header:
 #row.year = ["2020", "2021"]
 #row.month = ["January", "February"]
-# The same applies for column headers
-#column = ["Value1", "Value2"]
-# or
+# The same applies for column headers:
 #column.value = ["Value1", "Value2"]

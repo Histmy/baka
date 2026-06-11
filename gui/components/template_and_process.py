@@ -107,7 +107,11 @@ class TemplateAndProcess:
 
             for graph in self._state.graphs:
                 graph_path = path / "graphs" / (graph.id + ".toml")
-                make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
+                try:
+                    make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
+                except Exception as exc:
+                    self._dialog("Error", ft.Text(f'Failed to generate graph "{graph.name}": {exc}'))
+                    return
         except Exception as exc:
             self._dialog("Error", ft.Text(f"Graph generation failed: {exc}"))
             return

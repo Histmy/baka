@@ -145,6 +145,7 @@ class AppState:
     graphs: ObservableList[Graph]
     template = ObservableOptionalString(None)
     dir: str
+    dirty: bool
 
     selected_graph = SelectedGraph()
 
@@ -155,6 +156,7 @@ class AppState:
         self.template = ObservableOptionalString(None)
         self.dir = dir
         self.selected_graph = SelectedGraph()
+        self.dirty = False
 
     def reset(self, dir: str):
         self.workbooks.clear()
@@ -163,6 +165,7 @@ class AppState:
         self.template = ObservableOptionalString(None)
         self.dir = dir
         self.selected_graph.set(None)
+        self.dirty = False
 
     def save(self):
         if self.dir is None:
@@ -177,6 +180,8 @@ class AppState:
 
         with open(Path(self.dir) / "config.toml", "wb") as f:
             tomli_w.dump(data, f)
+
+        self.dirty = False
 
     def load(self, path: str):
         with open(Path(path) / "config.toml", "rb") as f:
@@ -197,3 +202,4 @@ class AppState:
 
         self.template.set(data.get("template", None))
         self.dir = path
+        self.dirty = False

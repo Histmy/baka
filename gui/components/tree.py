@@ -98,5 +98,7 @@ class Tree(ft.Column):
             return
         if checked and table not in selected_graph.tables:
             selected_graph.tables.append(table)
+            self._state.dirty = True
         elif not checked and table in selected_graph.tables:
             selected_graph.tables.remove(table)
+            self._state.dirty = True

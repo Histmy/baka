@@ -21,11 +21,9 @@ def make_spider_chart(data: ToGraph, config: Graph) -> None:
         case 1:
             make_one_dimensional_chart(ax, angles, data)
         case 2:
-            make_two_dimensional_chart(ax, angles, data)
+            make_two_dimensional_chart(ax, angles, data, config)
         case _:
             raise ValueError("Data with more than 2 dimensions is not supported.")
-
-    ax.set_title("Spider Chart")
 
 
 def make_one_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph):
@@ -38,10 +36,21 @@ def make_one_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph)
     ax.fill(angles, values, alpha=0.25)
 
 
-def make_two_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph):
-    for series_name, values in zip(data.labels[1].values, data.data.T):
-        values = np.concatenate((values, [values[0]]))  # Close the plot
+def make_two_dimensional_chart(ax: PolarAxes, angles: np.ndarray, data: ToGraph, config: Graph):
+
+    if config.x_axis is None or config.color is None:
+        raise ValueError("x_axis and color must be specified for two-dimensional spider chart.")
+
+    if data.labels[0].name == config.x_axis:
+        top_data = data.data.T
+        top = 1
+        bottom = 0
+    else:
+        top_data = data.data
+        top = 0
+        bottom = 1
+
+    for series_name, values in zip(data.labels[top].values, top_data):
+        values = np.concatenate((values, [values[bottom]]))  # Close the plot
         ax.plot(angles, values, marker="o", label=series_name)
         ax.fill(angles, values, alpha=0.25)
-
-    ax.legend(loc="upper right", bbox_to_anchor=(1.1, 1.1))

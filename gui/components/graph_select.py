@@ -84,6 +84,7 @@ class GraphSelect:
         n = len(self._state.graphs) + 1
         graph = app_state.Graph.new(name=f"New Graph {n}", tables=[])
         self._state.graphs.append(graph)
+        self._state.dirty = True
 
         toml_path = Path(self._state.dir) / "graphs" / (graph.id + ".toml")
         template_path = resource_path(Path("gui") / "toml_templates" / "graph.toml")
@@ -99,6 +100,7 @@ class GraphSelect:
             self._snack("No graph selected!")
             return
         self._state.graphs.remove(selected)
+        self._state.dirty = True
         self._state.selected_graph.set(None)
         self._dropdown.value = None
         self._page.update()

@@ -128,6 +128,7 @@ class LeftSide:
         path = e[0].path
         n = len(self._state.workbooks) + 1
         self._state.workbooks.append(app_state.Workbook.new(name=f"New Workbook {n}", path=(path or "")))
+        self._state.dirty = True
         # listener triggers _rebuild
 
     def _add_table(self, workbook_id: str):
@@ -138,6 +139,7 @@ class LeftSide:
         n = len(self._state.tables) + 1
         table = app_state.Table.new(name=f"New Table {n}", workbook=workbook)
         self._state.tables.append(table)
+        self._state.dirty = True
 
         # create TOML with hints
         toml_path = Path(self._state.dir) / "tables" / (table.id + ".toml")
@@ -154,7 +156,7 @@ class LeftSide:
         else:
             table = next((t for t in self._state.tables if t.id == self._selected_id), None)
             if table:
-                EditTableDialog(self._page, table, open_callback=self._open_table, on_saved=self._rebuild_tree)
+                EditTableDialog(self._page, self._state.tables, table, open_callback=self._open_table, on_saved=self._rebuild_tree)
 
     def _open_table(self, table_id: str):
         path = Path(self._state.dir) / "tables" / (table_id + ".toml")
@@ -171,7 +173,9 @@ class LeftSide:
                 for table in [t for t in self._state.tables if t.workbook.id == self._selected_id]:
                     self._state.tables.remove(table)
                 self._state.workbooks.remove(wb)
+                self._state.dirty = True
         else:
             table = next((t for t in self._state.tables if t.id == self._selected_id), None)
             if table:
                 self._state.tables.remove(table)
+                self._state.dirty = True

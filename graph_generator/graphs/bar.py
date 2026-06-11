@@ -34,6 +34,9 @@ def make_one_dimensional_chart(data: ToGraph, config: Graph):
     if config.color_palette is not None:
         sns.set_palette(config.color_palette, n_colors=len(df[config.x_axis].unique()))
 
+    if config.x_axis is None:
+        raise ValueError("x_axis must be specified for one-dimensional bar chart.")
+
     return sns.barplot(data=df, x=config.x_axis, y="y")
 
 
@@ -42,5 +45,8 @@ def make_two_dimensional_chart(data: ToGraph, config: Graph):
 
     if config.color_palette is not None:
         sns.set_palette(config.color_palette, n_colors=len(df[config.color].unique()))
+
+    if config.x_axis is None or config.color is None:
+        raise ValueError("x_axis and color must be specified for two-dimensional bar chart.")
 
     return sns.barplot(data=df, x=config.x_axis, y="y", hue=config.color)

@@ -1,7 +1,7 @@
 import flet as ft
 
-import gui.windows.main as main_window
 from gui.app_state import AppState
+from gui.windows.main import MainWindow
 from gui.windows.welcome import WelcomeWindow
 
 
@@ -22,7 +22,8 @@ def main(page: ft.Page):
 
 def load_main_window(page: ft.Page, appstate: AppState):
     page.controls.clear()
-    page.add(main_window.build(page, appstate))
+    win = MainWindow(page, appstate)
+    page.add(win.build())
     page.update()
 
 

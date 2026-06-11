@@ -43,7 +43,7 @@ def make_one_dimensional_chart(data: ToGraph, config: Graph):
 
 def make_two_dimensional_chart(data: ToGraph, config: Graph):
     rows = []
-    for x_label, values in zip(data.labels[0].values, data.data):
+    for x_label, values in zip(data.labels[0].values, data.data):  # pyright: ignore[reportArgumentType]
         for y in values:
             rows.append({"x": x_label, "y": y})
 

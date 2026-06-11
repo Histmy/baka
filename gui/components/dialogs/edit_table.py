@@ -1,3 +1,5 @@
+from typing import Callable
+
 import flet as ft
 
 from gui.app_state import Table
@@ -6,8 +8,9 @@ from gui.app_state import Table
 class EditTableDialog:
     """Modal dialog for renaming a Table and opening it in the system editor."""
 
-    def __init__(self, page: ft.Page, table: Table, open_callback, on_saved=None):
+    def __init__(self, page: ft.Page, tables: list[Table], table: Table, open_callback: Callable[[str], None], on_saved: Callable[[], None]):
         self._page = page
+        self._tables = tables
         self._table = table
         self._open_callback = open_callback
         self._on_saved = on_saved
@@ -51,11 +54,20 @@ class EditTableDialog:
 
     def _save(self):
         new_name = self._name_field.value.strip()
-        if new_name:
-            self._table.name = new_name
+        for table in self._tables:
+            if table.name == new_name and table.id != self._table.id:
+                overlay = ft.AlertDialog(
+                    title=ft.Text("Error"),
+                    content=ft.Text("A table with this name already exists. Please choose a different name."),
+                    actions=[ft.TextButton("OK", on_click=lambda _: setattr(overlay, "open", False) and self._page.update())],
+                )
+                self._page.overlay.append(overlay)
+                overlay.open = True
+                self._page.update()
+                return
+        self._table.name = new_name
         self._close()
-        if self._on_saved:
-            self._on_saved()
+        self._on_saved()
 
     def _cancel(self):
         self._close()
