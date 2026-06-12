@@ -49,12 +49,23 @@ class TemplateAndProcess:
                         spacing=10,
                     ),
                     ft.Container(expand=True),
-                    ft.ElevatedButton(
-                        "Process",
-                        icon=ft.Icons.PLAY_ARROW,
-                        bgcolor=ft.Colors.TEAL_700,
-                        color=ft.Colors.WHITE,
-                        on_click=self._process,
+                    ft.Column(
+                        [
+                            ft.ElevatedButton(
+                                "Process",
+                                icon=ft.Icons.PLAY_ARROW,
+                                bgcolor=ft.Colors.TEAL_700,
+                                color=ft.Colors.WHITE,
+                                on_click=self._process,
+                            ),
+                            ft.ElevatedButton(
+                                "Render Graphs Only",
+                                icon=ft.Icons.VIEW_COMFY,
+                                bgcolor=ft.Colors.BLUE_700,
+                                color=ft.Colors.WHITE,
+                                on_click=self._render_graphs_only,
+                            ),
+                        ]
                     ),
                 ],
                 spacing=12,
@@ -77,6 +88,25 @@ class TemplateAndProcess:
 
     # ── process ───────────────────────────────────────────────────────────────
 
+    def _setup_process(self):
+        try:
+            conf = generate_shared_config(self._state)
+            path = Path(self._state.dir)
+            conf_path = path / "shared_config.toml"
+            with open(conf_path, "wb") as f:
+                tomli_w.dump(conf, f)
+        except Exception as exc:
+            raise Exception(f"Failed to generate config: {exc}")
+
+        output_base = path / "output"
+
+        for graph in self._state.graphs:
+            graph_path = path / "graphs" / (graph.id + ".toml")
+            try:
+                make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
+            except Exception as exc:
+                raise Exception(f'Failed to generate graph "{graph.name}": {exc}')
+
     async def _process(self):
         template = self._state.template.get()
 
@@ -93,38 +123,29 @@ class TemplateAndProcess:
             return
 
         try:
-            conf = generate_shared_config(self._state)
-            path = Path(self._state.dir)
-            conf_path = path / "shared_config.toml"
-            with open(conf_path, "wb") as f:
-                tomli_w.dump(conf, f)
-        except Exception as exc:
-            self._dialog("Error", ft.Text(f"Failed to generate config: {exc}"))
-            return
-
-        try:
-            output_base = path / "output"
-
-            for graph in self._state.graphs:
-                graph_path = path / "graphs" / (graph.id + ".toml")
-                try:
-                    make_split(str(conf_path), str(graph_path), output_base / (graph.name + ".png"))
-                except Exception as exc:
-                    self._dialog("Error", ft.Text(f'Failed to generate graph "{graph.name}": {exc}'))
-                    return
+            self._setup_process()
         except Exception as exc:
             self._dialog("Error", ft.Text(f"Graph generation failed: {exc}"))
             return
 
         try:
             doc = docx.Document(template)
-            replace_placeholder_with_figure(doc, output_base, "Figure", "Figure", "This is a sample figure.")
+            replace_placeholder_with_figure(doc, Path(self._state.dir) / "output", "Figure", "Figure", "This is a sample figure.")
             doc.save(file)
         except Exception as exc:
             self._dialog("Error", ft.Text(f"Failed to generate document: {exc}"))
             return
 
         self._snack(f"Successfully saved to {file}")
+
+    def _render_graphs_only(self):
+        try:
+            self._setup_process()
+        except Exception as exc:
+            self._dialog("Error", ft.Text(f"Failed to render graphs: {exc}"))
+            return
+
+        self._snack("Graphs rendered to output folder successfully.")
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
