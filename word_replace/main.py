@@ -54,7 +54,7 @@ def replace_placeholder_with_figure(doc: docx.document.Document, base: Path, bef
         add_custom_element(caption_p, "w:fldChar", "w:fldCharType", "end")
 
         # Add the actual description
-        caption_p.add_run(": " + img_path)
+        caption_p.add_run(": " + match.group(1))
 
 
 def add_style(doc: docx.document.Document):

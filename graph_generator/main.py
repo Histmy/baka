@@ -138,7 +138,7 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
     plt.tight_layout()
     plt.savefig(path, format="png", dpi=300)
     # plt.show()
-    plt.close()
+    plt.clf()  # clear everything for next graph
 
 
 def make_simple(config_file: str, output_path: Path) -> None:
