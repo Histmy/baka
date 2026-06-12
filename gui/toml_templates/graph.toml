@@ -4,9 +4,33 @@
 
 # If you want to use any example, just remove the comment character (#).
 
+
 # If you want to override or add any filter to any of the selected tables, specify them in the section similar to the one in table deffinition:
 #[filters.table_name]
 # Here you can specify the same stuff as in the table filter section.
+
+
+# If you include multiple tables it is required to merge them somehow. For this the post_processing section is used.
+#[post_processing]
+# Here you can specify how to merge the tables and a couple other things.
+
+#join_type = "sum" # This join type is used for summing the tables by some series specified by merge_serie
+#join_type = "ratio" # This one is used for dividing values of one table by the values of another table
+#join_type = "merge" # This one merges the tables by some series next to each other.
+
+#merge_serie = "year" # This is required when using any join type, it specifies the series by which the join is happening
+# For example, if you have two tables with same countries but one is for RU and other for UAS for example, you can specify "country" here and
+# it will sum the values of each country, or place the countries next to each other. For the ratio join, the "year" would be better suited,
+# because we want to divide the values in each year, not do anything with countries as a whole.
+
+#ratio_first = "table1" # This is required when using join type ratio, it specifies which table's values are used as the numerators.
+#ratio_second = "table2" # Similar as above, it specifies which table's values are used as the denominators.
+
+#reverse = "year" # This is used to reverse the order of the values in the specified series
+#reverse = ["year", "country"] # You can also specify multiple series to reverse, just put them in a list like this
+
+#diff_serie = "year" # This is used on a single table to calculate the difference between the first and last value in the specified series.
+
 
 [graph]
 # Here specify the type of graph and other settings affecting the visualization.

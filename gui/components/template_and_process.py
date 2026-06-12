@@ -7,7 +7,7 @@ import tomli_w
 from graph_generator.main import make_split
 from gui import app_state
 from gui.util.shared_config import generate_shared_config
-from word_replace.main import replace_placeholder_with_figure
+from word_replace.main import add_style, replace_placeholder_with_figure
 
 
 class TemplateAndProcess:
@@ -130,7 +130,11 @@ class TemplateAndProcess:
 
         try:
             doc = docx.Document(template)
-            replace_placeholder_with_figure(doc, Path(self._state.dir) / "output", "Figure", "Figure", "This is a sample figure.")
+
+            add_style(doc)
+
+            replace_placeholder_with_figure(doc, Path(self._state.dir) / "output", "Figure", "Figure")
+
             doc.save(file)
         except Exception as exc:
             self._dialog("Error", ft.Text(f"Failed to generate document: {exc}"))

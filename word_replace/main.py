@@ -1,11 +1,14 @@
 import os
 import re
 from pathlib import Path
+from typing import cast
 
 import docx.document
+from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Inches
+from docx.shared import Inches, Pt
+from docx.styles.style import ParagraphStyle
 from docx.text.paragraph import Paragraph
 
 
@@ -18,7 +21,7 @@ def add_custom_element(caption: Paragraph, name: str, key: str, value: str):
     return element
 
 
-def replace_placeholder_with_figure(doc: docx.document.Document, base: Path, before: str, field_name: str, caption_text: str):
+def replace_placeholder_with_figure(doc: docx.document.Document, base: Path, before: str, field_name: str):
     for p in doc.paragraphs:
         match = re.match(r"^\{\{ (.+?) \}\}$", p.text)
         if not match:
@@ -51,13 +54,33 @@ def replace_placeholder_with_figure(doc: docx.document.Document, base: Path, bef
         add_custom_element(caption_p, "w:fldChar", "w:fldCharType", "end")
 
         # Add the actual description
-        caption_p.add_run(": " + caption_text)
+        caption_p.add_run(": " + img_path)
+
+
+def add_style(doc: docx.document.Document):
+    styles = doc.styles
+
+    if "Caption" in styles:
+        return
+
+    caption_style = styles.add_style("Caption", WD_STYLE_TYPE.PARAGRAPH)
+
+    caption_style = cast(ParagraphStyle, caption_style)  # typehint for mypy
+
+    caption_style.base_style = styles["Normal"]
+    caption_style.font.name = "Atpos"
+    caption_style.font.size = Pt(9)
+    caption_style.font.italic = True
+
+    caption_style.hidden = False
+    caption_style.quick_style = True
 
 
 def example():
     document = docx.Document("base.docx")
+    add_style(document)
 
-    replace_placeholder_with_figure(document, Path(os.getcwd()), "Figure", "Figure", "This is a sample figure.")
+    replace_placeholder_with_figure(document, Path(os.getcwd()), "Figure", "Figure")
 
     document.save("edited.docx")
 

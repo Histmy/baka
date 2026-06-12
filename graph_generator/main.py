@@ -27,12 +27,19 @@ def combine(graphs: dict[str, ToGraph], post_processing: PostProcessing) -> ToGr
     match post_processing.join_type:
         case "sum":
             graphs_list = list(graphs.values())
+            if post_processing.merge_serie is None:
+                raise ValueError("Sum join_type requires merge_serie to specify the name of the series to sum by.")
+
+            summed = graphs_list[0]
             for i in range(1, len(graphs_list)):
-                PostProcess.sum(graphs_list[0], graphs_list[i])
-            return graphs_list[0]
+                summed = PostProcess.sum(summed, graphs_list[i], post_processing.merge_serie)
+            return summed
         case "ratio":
             if len(graphs) != 2:
                 raise ValueError("Ratio join_type requires exactly two tables.")
+
+            if post_processing.merge_serie is None:
+                raise ValueError("Ratio join_type requires merge_serie to specify the name of the series to divide by.")
 
             first, second = post_processing.ratio_first, post_processing.ratio_second
             if first is None or second is None:
@@ -41,7 +48,7 @@ def combine(graphs: dict[str, ToGraph], post_processing: PostProcessing) -> ToGr
             if first not in graphs or second not in graphs:
                 raise ValueError(f"Specified tables for ratio not found in graphs: {first}, {second}")
 
-            PostProcess.divide(graphs[first], graphs[second])
+            PostProcess.divide(graphs[first], graphs[second], post_processing.merge_serie)
             return graphs[first]
         case "merge":
             if post_processing.merge_serie is None:
@@ -81,6 +88,9 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
         output = load_data(tables[table_name], filters[table_name] if table_name in filters else ParsedFilter(row=None, column=None))
 
         processed = PostProcess.collapse(output)
+
+        if post_processing is not None and post_processing.diff_serie is not None:
+            processed = PostProcess.collapse(PostProcess.diff(processed, post_processing.diff_serie))
         # processed = PostProcess.simple_transpose(processed)
         all[table_name] = processed
 
@@ -124,7 +134,10 @@ def generate(tables: dict[str, ParsedTable], filters: dict[str, ParsedFilter], p
 
     if graph_config.title is not None:
         plt.title(graph_config.title)
+
+    plt.tight_layout()
     plt.savefig(path, format="png", dpi=300)
+    # plt.show()
     plt.close()
 
 

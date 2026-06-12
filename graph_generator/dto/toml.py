@@ -51,6 +51,7 @@ class PostProcessing(BaseModel):
     ratio_second: Optional[str] = None
     merge_serie: Optional[str] = None
     reverse: Optional[str | list[str]] = None
+    diff_serie: Optional[str] = None
 
 
 class Config(BaseModel):

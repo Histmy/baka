@@ -14,6 +14,9 @@ def make_bar_chart(data: ToGraph, config: Graph) -> None:
         case _:
             raise ValueError("Data with more than 2 dimensions is not supported.")
 
+    ax.set_axisbelow(True)
+    ax.grid(True, axis="y", color="gray", linestyle="-", linewidth=0.5, alpha=0.7)
+
     # TODO: is same for bar, line, box and historgram, DRY out
     ax.set_ylim(config.min, config.max)
 
